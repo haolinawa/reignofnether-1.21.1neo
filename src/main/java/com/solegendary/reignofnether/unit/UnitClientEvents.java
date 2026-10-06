@@ -996,6 +996,23 @@ public class UnitClientEvents {
     }
 
 
+    // The mod keeps units in allUnits even after the client unloads them (so the minimap/HUD can keep
+    // tracking them). Their bounding box then stays at the last known position, which used to leave a
+    // stray ground box behind on empty terrain - only draw units the client still has loaded.
+    private static boolean ron$isLoadedOnClient(Entity entity) {
+        return MC.level != null && MC.level.getEntity(entity.getId()) == entity;
+    }
+
+    // Entity rendering interpolates between ticks; match that so the ground box sits exactly under the
+    // rendered entity instead of lagging one tick behind while the unit is moving.
+    private static AABB ron$renderAabb(LivingEntity entity, float partialTick) {
+        AABB aabb = (entity instanceof Unit unit) ? unit.getInflatedSelectionBox() : entity.getBoundingBox();
+        double dx = net.minecraft.util.Mth.lerp((double) partialTick, entity.xOld, entity.getX()) - entity.getX();
+        double dy = net.minecraft.util.Mth.lerp((double) partialTick, entity.yOld, entity.getY()) - entity.getY();
+        double dz = net.minecraft.util.Mth.lerp((double) partialTick, entity.zOld, entity.getZ()) - entity.getZ();
+        return aabb.move(dx, dy, dz);
+    }
+
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent evt) {
         if (MC.level == null)
@@ -1024,7 +1041,7 @@ public class UnitClientEvents {
                     boolean isRightClickDown = MiscUtil.isRightClickDown(MC);
                     // render outline for each selected and preselected entities
                     for (Entity entity : unitsToDraw) {
-                        if (!FogOfWarClientEvents.isInBrightChunk(entity))
+                        if (!ron$isLoadedOnClient(entity) || !FogOfWarClientEvents.isInBrightChunk(entity))
                             continue;
 
                         AABB entityAABB = entity.getBoundingBox();
@@ -1056,10 +1073,12 @@ public class UnitClientEvents {
                     // 1.21.1: both custom render types use the shared BufferSource buffer, so fetching
                     // the second one flushes the first and any further addVertex throws "Not building!".
                     // Therefore emit one render type per pass, fetching each buffer right before its pass.
+                    float pTick = evt.getPartialTick().getGameTimeDeltaPartialTick(false);
                     if (OrthoviewClientEvents.isEnabled()) {
                         var vcNoDepthTest = MC.renderBuffers().bufferSource().getBuffer(MyRenderer.LINES_NO_DEPTH_TEST);
                         for (LivingEntity entity : allUnits) {
-                            if (!FogOfWarClientEvents.isInBrightChunk(entity) ||
+                            if (!ron$isLoadedOnClient(entity) ||
+                                    !FogOfWarClientEvents.isInBrightChunk(entity) ||
                                     entity.isPassenger())
                                 continue;
 
@@ -1068,10 +1087,7 @@ public class UnitClientEvents {
                                 alpha = 1.0f;
 
                             // draw only the bottom of the outline boxes
-                            AABB entityAABB = entity.getBoundingBox();
-                            if (entity instanceof Unit unit) {
-                                entityAABB = unit.getInflatedSelectionBox();
-                            }
+                            AABB entityAABB = ron$renderAabb(entity, pTick);
                             entityAABB = entityAABB.setMaxY(entityAABB.minY);
 
                             // always-shown highlights to indicate unit relationships
@@ -1081,15 +1097,13 @@ public class UnitClientEvents {
 
                     var vc = MC.renderBuffers().bufferSource().getBuffer(MyRenderer.LINES_UNDER_ENTITIES);
                     for (LivingEntity entity : allUnits) {
-                        if (!FogOfWarClientEvents.isInBrightChunk(entity) ||
+                        if (!ron$isLoadedOnClient(entity) ||
+                                !FogOfWarClientEvents.isInBrightChunk(entity) ||
                                 entity.isPassenger())
                             continue;
 
                         // draw only the bottom of the outline boxes
-                        AABB entityAABB = entity.getBoundingBox();
-                        if (entity instanceof Unit unit) {
-                            entityAABB = unit.getInflatedSelectionBox();
-                        }
+                        AABB entityAABB = ron$renderAabb(entity, pTick);
                         entityAABB = entityAABB.setMaxY(entityAABB.minY);
 
                         Color colorHex;
