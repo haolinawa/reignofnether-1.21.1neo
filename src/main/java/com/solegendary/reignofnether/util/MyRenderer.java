@@ -140,10 +140,12 @@ public class MyRenderer {
     }
 
     public static void drawLineBox(PoseStack matrixStack, AABB aabb, VertexConsumer vertexConsumer, float r, float g, float b, float a) {
-        Entity camEntity = MC.getCameraEntity();
-        double d0 = camEntity.getX();
-        double d1 = camEntity.getY() + camEntity.getEyeHeight();
-        double d2 = camEntity.getZ();
+        // 1.21.1: use the actual render camera position (interpolated between ticks and including view
+        // bobbing). The camera entity's raw tick position made every world-space overlay drift while moving.
+        Vec3 camPos = MC.gameRenderer.getMainCamera().getPosition();
+        double d0 = camPos.x();
+        double d1 = camPos.y();
+        double d2 = camPos.z();
 
         matrixStack.pushPose();
         matrixStack.translate(-d0, -d1, -d2); // because we start at 0,0,0 relative to camera
@@ -152,10 +154,12 @@ public class MyRenderer {
     }
 
     public static void drawLineBox(PoseStack matrixStack, AABB aabb, float r, float g, float b, float a) {
-        Entity camEntity = MC.getCameraEntity();
-        double d0 = camEntity.getX();
-        double d1 = camEntity.getY() + camEntity.getEyeHeight();
-        double d2 = camEntity.getZ();
+        // 1.21.1: use the actual render camera position (interpolated between ticks and including view
+        // bobbing). The camera entity's raw tick position made every world-space overlay drift while moving.
+        Vec3 camPos = MC.gameRenderer.getMainCamera().getPosition();
+        double d0 = camPos.x();
+        double d1 = camPos.y();
+        double d2 = camPos.z();
 
         VertexConsumer vertexConsumer = MC.renderBuffers().bufferSource().getBuffer(RenderType.lines());
 
@@ -176,10 +180,12 @@ public class MyRenderer {
             float a,
             boolean excludeMaxY
     ) {
-        Entity camEntity = MC.getCameraEntity();
-        double d0 = camEntity.getX();
-        double d1 = camEntity.getY() + camEntity.getEyeHeight();
-        double d2 = camEntity.getZ();
+        // 1.21.1: use the actual render camera position (interpolated between ticks and including view
+        // bobbing). The camera entity's raw tick position made every world-space overlay drift while moving.
+        Vec3 camPos = MC.gameRenderer.getMainCamera().getPosition();
+        double d0 = camPos.x();
+        double d1 = camPos.y();
+        double d2 = camPos.z();
 
         matrixStack.pushPose();
         matrixStack.translate(-d0, -d1, -d2); // because we start at 0,0,0 relative to camera
@@ -351,10 +357,12 @@ public class MyRenderer {
             float a,
             ResourceLocation rl
     ) {
-        Entity camEntity = MC.getCameraEntity();
-        double d0 = camEntity.getX();
-        double d1 = camEntity.getY() + camEntity.getEyeHeight();
-        double d2 = camEntity.getZ();
+        // 1.21.1: use the actual render camera position (interpolated between ticks and including view
+        // bobbing). The camera entity's raw tick position made every world-space overlay drift while moving.
+        Vec3 camPos = MC.gameRenderer.getMainCamera().getPosition();
+        double d0 = camPos.x();
+        double d1 = camPos.y();
+        double d2 = camPos.z();
 
         matrixStack.pushPose();
         matrixStack.translate(-d0, -d1, -d2); // because we start at 0,0,0 relative to camera
@@ -462,13 +470,10 @@ public class MyRenderer {
             float b,
             float a
     ) {
-        Entity camEntity = MC.getCameraEntity();
-        if (camEntity == null)
-            return;
-
-        double d0 = camEntity.getX();
-        double d1 = camEntity.getY() + camEntity.getEyeHeight();
-        double d2 = camEntity.getZ();
+        Vec3 camPos = MC.gameRenderer.getMainCamera().getPosition();
+        double d0 = camPos.x();
+        double d1 = camPos.y();
+        double d2 = camPos.z();
 
         matrixStack.pushPose();
         matrixStack.translate(-d0, -d1, -d2); // because we start at 0,0,0 relative to camera
