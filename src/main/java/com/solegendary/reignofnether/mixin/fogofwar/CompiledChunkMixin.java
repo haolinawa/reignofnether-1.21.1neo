@@ -16,7 +16,8 @@ import java.util.List;
 @Mixin(targets = "net.minecraft.client.renderer.chunk.SectionRenderDispatcher$CompiledSection")
 public abstract class CompiledChunkMixin {
 
-    @Shadow @Final List<BlockEntity> renderableBlockEntities = Lists.newArrayList();
+    // the target field is final, but a @Shadow field must not carry an initialiser (newer Mixin warns/errors)
+    @Shadow @Final List<BlockEntity> renderableBlockEntities;
 
     @Inject(
         method = "getRenderableBlockEntities",

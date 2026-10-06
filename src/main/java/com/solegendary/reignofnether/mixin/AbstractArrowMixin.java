@@ -168,7 +168,11 @@ public abstract class AbstractArrowMixin extends Projectile {
                 !(boggedUnit.getTargetGoal().forced && boggedUnit.getTargetGoal().getTarget() == entity);
     }
 
-    protected boolean canHitEntity(Entity entity) {
+    // must stay public: the target (Entity/Projectile#canHitEntity) is public, and Mixin 0.16+ rejects an
+    // overwrite that reduces visibility ("PROTECTED overwrite method ... cannot reduce visibility of PUBLIC
+    // target method"), which made the mod fail to load on servers using that Mixin version.
+    @Override
+    public boolean canHitEntity(Entity entity) {
         return super.canHitEntity(entity) &&
                 (this.piercingIgnoreEntityIds == null || !this.piercingIgnoreEntityIds.contains(entity.getId())) &&
                 !reignofnether$collidedWithUntargetedAlly(entity) &&
