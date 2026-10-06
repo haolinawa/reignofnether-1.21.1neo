@@ -15,13 +15,13 @@
 
 ## 下载
 
-**最新发布：[`beta` — 1.5.0-1.21.1-beta-1](https://github.com/haolinawa/reignofnether-1.21.1neo/releases/tag/beta)**（预发布 / 测试版）
+**最新发布：[`beta` — 1.5.0-1.21.1-beta-2](https://github.com/haolinawa/reignofnether-1.21.1neo/releases/tag/beta)**（预发布 / 测试版）
 
 | | |
 |---|---|
-| 移植版版本 | `1.5.0-1.21.1-beta-1` |
-| 文件名 | `reignofnether-1.5.0-1.21.1-beta-1.jar` |
-| 直接下载 | [reignofnether-1.5.0-1.21.1-beta-1.jar](https://github.com/haolinawa/reignofnether-1.21.1neo/releases/download/beta/reignofnether-1.5.0-1.21.1-beta-1.jar) |
+| 移植版版本 | `1.5.0-1.21.1-beta-2` |
+| 文件名 | `reignofnether-1.5.0-1.21.1-beta-2.jar` |
+| 直接下载 | [reignofnether-1.5.0-1.21.1-beta-2.jar](https://github.com/haolinawa/reignofnether-1.21.1neo/releases/download/beta/reignofnether-1.5.0-1.21.1-beta-2.jar) |
 | 全部发布 | https://github.com/haolinawa/reignofnether-1.21.1neo/releases |
 
 下载 jar 放进 `mods` 文件夹即可，也可以参考下面的"从源码构建"。
@@ -41,7 +41,7 @@
 
 1. 安装 **Minecraft 1.21.1 对应的 NeoForge 21.1.x** —— https://neoforged.net/
 2. 确认启动器使用的是 **Java 21**。
-3. 把 `reignofnether-1.5.0-1.21.1-beta-1.jar` 放进 `mods` 文件夹：
+3. 把 `reignofnether-1.5.0-1.21.1-beta-2.jar` 放进 `mods` 文件夹：
    - Windows：`%appdata%\.minecraft\mods`
    - Linux / macOS：`~/.minecraft/mods`
 4. 用 NeoForge 1.21.1 配置启动游戏。
@@ -57,7 +57,7 @@ cd reignofnether-1.21.1neo
 ```
 
 - 需要 **JDK 21**。
-- 产物：`build/libs/reignofnether-1.5.0-1.21.1-beta-1.jar`
+- 产物：`build/libs/reignofnether-1.5.0-1.21.1-beta-2.jar`
 - `./gradlew runClient` 启动开发客户端，`./gradlew runServer` 启动开发服务端。
 
 ## 移植说明
