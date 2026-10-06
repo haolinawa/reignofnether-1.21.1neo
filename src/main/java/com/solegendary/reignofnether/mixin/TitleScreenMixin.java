@@ -52,7 +52,7 @@ public class TitleScreenMixin extends Screen {
     private static final ResourceLocation LILYPAD_TEXTURE =
             ResourceLocation.parse( "textures/gui/title/lilypad.png");
 
-    @Shadow @Final private boolean fading;
+    @Shadow private boolean fading; // not final in TitleScreen - newer Mixin rejects a mismatched @Final
     @Shadow private long fadeInStart;
     private AbstractWidget lilypadButton;
     private AbstractWidget discordButton;

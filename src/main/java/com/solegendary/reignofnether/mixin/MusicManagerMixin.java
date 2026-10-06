@@ -20,10 +20,11 @@ import javax.annotation.Nullable;
 @Mixin(MusicManager.class)
 public class MusicManagerMixin {
 
-    @Shadow private int nextSongDelay = 100;
+    // @Shadow fields must not carry initialisers: Mixin ignores them and newer versions warn/error
+    @Shadow private int nextSongDelay;
     @Shadow @Final private Minecraft minecraft;
     @Nullable @Shadow private SoundInstance currentMusic;
-    @Shadow @Final private RandomSource random = RandomSource.create();
+    @Shadow @Final private RandomSource random;
     @Shadow public void startPlaying(Music pSelector) {}
 
     @Inject(
