@@ -15,14 +15,16 @@ It does not try to imitate those games exactly; instead it aims for uniquely-Min
 
 ## Downloads
 
-**Latest release: [`beta` — 1.5.0-1.21.1-beta-3](https://github.com/haolinawa/reignofnether-1.21.1neo/releases/tag/beta)** (pre-release / test build)
+**Latest release: [beta-3 — 1.5.0-1.21.1-beta-3](https://github.com/haolinawa/reignofnether-1.21.1neo/releases/tag/beta-3)** (pre-release / test build)
 
 | | |
 |---|---|
 | Port version | `1.5.0-1.21.1-beta-3` |
 | File | `reignofnether-1.5.0-1.21.1-beta-3.jar` |
-| Direct download | [reignofnether-1.5.0-1.21.1-beta-3.jar](https://github.com/haolinawa/reignofnether-1.21.1neo/releases/download/beta/reignofnether-1.5.0-1.21.1-beta-3.jar) |
+| Direct download | [reignofnether-1.5.0-1.21.1-beta-3.jar](https://github.com/haolinawa/reignofnether-1.21.1neo/releases/download/beta-3/reignofnether-1.5.0-1.21.1-beta-3.jar) |
 | All releases | https://github.com/haolinawa/reignofnether-1.21.1neo/releases |
+
+Every port version is published as its own release, tagged with its version suffix (`beta-3`, `beta-4`, ...).
 
 Download the jar and drop it into your `mods` folder. You can also build it from source (see below).
 

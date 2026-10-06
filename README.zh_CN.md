@@ -15,14 +15,16 @@
 
 ## 下载
 
-**最新发布：[`beta` — 1.5.0-1.21.1-beta-3](https://github.com/haolinawa/reignofnether-1.21.1neo/releases/tag/beta)**（预发布 / 测试版）
+**最新发布：[beta-3 — 1.5.0-1.21.1-beta-3](https://github.com/haolinawa/reignofnether-1.21.1neo/releases/tag/beta-3)**（预发布 / 测试版）
 
 | | |
 |---|---|
 | 移植版版本 | `1.5.0-1.21.1-beta-3` |
 | 文件名 | `reignofnether-1.5.0-1.21.1-beta-3.jar` |
-| 直接下载 | [reignofnether-1.5.0-1.21.1-beta-3.jar](https://github.com/haolinawa/reignofnether-1.21.1neo/releases/download/beta/reignofnether-1.5.0-1.21.1-beta-3.jar) |
+| 直接下载 | [reignofnether-1.5.0-1.21.1-beta-3.jar](https://github.com/haolinawa/reignofnether-1.21.1neo/releases/download/beta-3/reignofnether-1.5.0-1.21.1-beta-3.jar) |
 | 全部发布 | https://github.com/haolinawa/reignofnether-1.21.1neo/releases |
+
+每个版本都会单独发一个 Release，tag 与版本后缀一致（`beta-3`、`beta-4`……）。
 
 下载 jar 放进 `mods` 文件夹即可，也可以参考下面的"从源码构建"。
 
