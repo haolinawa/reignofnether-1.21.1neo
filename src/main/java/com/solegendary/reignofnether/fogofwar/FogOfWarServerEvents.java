@@ -497,14 +497,26 @@ public class FogOfWarServerEvents {
                 resendChunks.add(chunk);
             }
 
+            boolean visionChanged = prevSent == null
+                    || !prevSent.equals(sent)
+                    || !masksEqual(prevEdge, edge);
+
             playerLiveChunks.put(uuid, live);
             playerEdgeChunks.put(uuid, sent);
             playerEdgeMasks.put(uuid, edge);
 
+            // Vanilla only re-evaluates entity tracking when a player moves, an entity is added, or an
+            // entity changes section (ChunkMap.tick). Our fog gate hides entities outside the vision mask, so
+            // when a mask GROWS an entity can become visible without any of those happening - which is why
+            // other players/entities took a while to appear. ChunkMap.move(player) runs exactly vanilla's
+            // pairing loop for this player, so the entity is paired (and sent) on this very tick.
+            if (visionChanged && serverLevel != null)
+                serverLevel.getChunkSource().chunkMap.move(sp);
+
             // The mask packet must go out BEFORE the chunk resends: the client merges each incoming chunk
             // against its CURRENT mask (restoring fogged columns, see ClientChunkCacheMixin), so it needs
             // the new mask first or newly-visible columns would stay frozen at their stale state.
-            if (prevSent == null || !prevSent.equals(sent) || !masksEqual(prevEdge, edge))
+            if (visionChanged)
                 FogChunksClientboundPacket.send(sp, sent, edge);
 
             // noLight == client retains its cached lighting
