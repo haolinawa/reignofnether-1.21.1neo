@@ -352,7 +352,8 @@ public class ItemClientEvents {
     public static void onRenderLevel(RenderLevelStageEvent evt) {
         if (!ENABLED) return;
 
-        if (evt.getStage() != RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS)
+        // 1.21.1: see CursorClientEvents - only AFTER_TRANSLUCENT_BLOCKS is dispatched with the view matrix
+        if (evt.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS)
             return;
 
         if (MC.level != null && OrthoviewClientEvents.isEnabled()) {

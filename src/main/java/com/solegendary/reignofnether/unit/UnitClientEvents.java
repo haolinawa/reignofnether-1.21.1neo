@@ -111,6 +111,7 @@ import static com.solegendary.reignofnether.hud.HudClientEvents.hudSelectedEntit
 import static com.solegendary.reignofnether.unit.Checkpoint.CHECKPOINT_TICKS_FADE;
 import static net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS;
 import static net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage.AFTER_ENTITIES;
+import static net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS;
 
 
 public class UnitClientEvents {
@@ -1017,7 +1018,9 @@ public class UnitClientEvents {
     public static void onRenderLevel(RenderLevelStageEvent evt) {
         if (MC.level == null)
             return;
-        if (evt.getStage() == AFTER_CUTOUT_BLOCKS ||
+        // 1.21.1: AFTER_CUTOUT_BLOCKS is dispatched before LevelRenderer sets up the view matrix, so
+        // world-space overlays drawn there lack the camera rotation. Use the stage that has it.
+        if (evt.getStage() == AFTER_TRANSLUCENT_BLOCKS ||
             evt.getStage() == AFTER_ENTITIES) {
             ArrayList<LivingEntity> selectedUnits = getSelectedUnits();
             ArrayList<LivingEntity> preselectedUnits = getPreselectedUnits();
@@ -1063,7 +1066,7 @@ public class UnitClientEvents {
                             MyRenderer.drawLineBoxOutlineOnly(evt.getPoseStack(), vcNoDepthTest, entityAABB, 1.0f, 1.0f, 1.0f, isRightClickDown ? 1.0f : 0.5f, false);
                     }
                 }
-            } else if (evt.getStage() == AFTER_CUTOUT_BLOCKS) {
+            } else if (evt.getStage() == AFTER_TRANSLUCENT_BLOCKS) {
                 if (MinimapClientEvents.shouldUnderline()) {
                     var selectedEntityIds = new HashSet<>();
                     for (LivingEntity selectedUnit : selectedUnits) {

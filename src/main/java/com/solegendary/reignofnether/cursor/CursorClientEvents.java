@@ -475,7 +475,9 @@ public class CursorClientEvents {
 
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent evt) {
-        if (evt.getStage() != RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS ||
+        // 1.21.1: AFTER_CUTOUT_BLOCKS is dispatched before LevelRenderer sets up the view matrix, so
+        // world-space overlays drawn there lack the camera rotation. Use the stage that has it.
+        if (evt.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS ||
                 HudClientEvents.isMouseOverAnyButtonOrHud())
             return;
         if (MC.level != null && OrthoviewClientEvents.isEnabled()) {

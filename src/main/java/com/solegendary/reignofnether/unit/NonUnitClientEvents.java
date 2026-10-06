@@ -23,6 +23,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 
 import static net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS;
+import static net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS;
 
 public class NonUnitClientEvents {
 
@@ -54,8 +55,9 @@ public class NonUnitClientEvents {
         if (MC.level == null)
             return;
 
-        // AFTER_CUTOUT_BLOCKS lets us see checkpoints through leaves
-        if (OrthoviewClientEvents.isEnabled() && evt.getStage() == AFTER_CUTOUT_BLOCKS) {
+        // 1.21.1: AFTER_CUTOUT_BLOCKS is dispatched before LevelRenderer sets up the view matrix, so
+        // world-space overlays drawn there lack the camera rotation. Use the stage that has it.
+        if (OrthoviewClientEvents.isEnabled() && evt.getStage() == AFTER_TRANSLUCENT_BLOCKS) {
             VertexConsumer vertexConsumerLine = MC.renderBuffers().bufferSource().getBuffer(RenderType.LINES);
             ResourceLocation rl = ResourceLocation.parse("forge:textures/white.png");
             VertexConsumer vertexConsumerEntityTranslucent = MC.renderBuffers().bufferSource().getBuffer(RenderType.entityTranslucent(rl));
