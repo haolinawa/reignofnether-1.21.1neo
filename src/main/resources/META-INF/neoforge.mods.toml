@@ -1,0 +1,37 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+
+license="GNU GPLv3"
+
+[[mods]]
+modId="reignofnether"
+version="1.5.0-1.21.1-beta-1"
+displayName="Reign of Nether"
+logoFile="examplemod.png"
+credits="Thanks to Technovision for his YouTube guides"
+authors="SoLegendary"
+description='''
+Minecraft, except it's an RTS
+'''
+
+# Declare the mixin config so FML loads it (replaces the old "MixinConfigs" manifest attribute usage).
+[[mixins]]
+config="reignofnether.mixins.json"
+
+# Access transformer declaration (NeoForge 1.21.1).
+[[accessTransformers]]
+file="META-INF/accesstransformer.cfg"
+
+[[dependencies.reignofnether]]
+    modId="neoforge"
+    type="required"
+    versionRange="[21.1.0,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.reignofnether]]
+    modId="minecraft"
+    type="required"
+    versionRange="[1.21.1,1.22)"
+    ordering="NONE"
+    side="BOTH"
