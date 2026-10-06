@@ -76,6 +76,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
@@ -89,6 +90,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.*;
 import net.neoforged.neoforge.event.entity.living.*;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.bus.api.Event;
@@ -393,6 +395,67 @@ public class UnitServerEvents {
         }
     }
 
+    // 1.21.1: FinalizeSpawnEvent is only fired for mob spawners (BaseSpawner / TrialSpawner). Spawn eggs go
+    // through EntityType.create(), which calls Mob#finalizeSpawn directly, so onMobSpawn below never ran for
+    // them - egg-placed units were left owned by nobody. Remember who used the egg and claim the unit when
+    // it joins the level instead.
+    private static String pendingSpawnEggOwnerName = null;
+    private static BlockPos pendingSpawnEggPos = null;
+    private static String pendingSpawnEggDimension = null;
+    private static long pendingSpawnEggGameTime = -1;
+
+    @SubscribeEvent
+    public static void onSpawnEggUse(PlayerInteractEvent.RightClickBlock evt) {
+        if (evt.getLevel().isClientSide())
+            return;
+        if (!(evt.getItemStack().getItem() instanceof SpawnEggItem))
+            return;
+
+        pendingSpawnEggOwnerName = evt.getEntity().getName().getString();
+        pendingSpawnEggPos = evt.getPos();
+        pendingSpawnEggDimension = evt.getLevel().dimension().location().toString();
+        pendingSpawnEggGameTime = evt.getLevel().getGameTime();
+    }
+
+    private static void clearPendingSpawnEgg() {
+        pendingSpawnEggOwnerName = null;
+        pendingSpawnEggPos = null;
+        pendingSpawnEggDimension = null;
+        pendingSpawnEggGameTime = -1;
+    }
+
+    private static void assignSpawnEggOwner(ServerLevel level, Unit unit) {
+        Entity unitEntity = (Entity) unit;
+        if (pendingSpawnEggPos == null || pendingSpawnEggDimension == null)
+            return;
+        if (level.getGameTime() - pendingSpawnEggGameTime > 5
+                || !level.dimension().location().toString().equals(pendingSpawnEggDimension)
+                || unitEntity.position().distanceToSqr(Vec3.atCenterOf(pendingSpawnEggPos)) > 16)
+            return;
+
+        String ownerName = pendingSpawnEggOwnerName;
+        clearPendingSpawnEgg();
+
+        // whoever placed the egg owns the unit
+        if (ownerName != null && isRTSPlayer(ownerName)) {
+            unit.setOwnerName(ownerName);
+            return;
+        }
+
+        // fallback (and the original mod's behaviour): closest RTS player within 10 blocks
+        Player closestPlayer = null;
+        float closestPlayerDist = 10;
+        for (Player player : MiscUtil.getEntitiesWithinRange(
+                new Vector3d(unitEntity.getX(), unitEntity.getY(), unitEntity.getZ()), 10, Player.class, level)) {
+            if (player.distanceTo(unitEntity) < closestPlayerDist && isRTSPlayer(player.getName().getString())) {
+                closestPlayerDist = player.distanceTo(unitEntity);
+                closestPlayer = player;
+            }
+        }
+        if (closestPlayer != null)
+            unit.setOwnerName(closestPlayer.getName().getString());
+    }
+
     @SubscribeEvent
     public static void onEntityJoin(EntityJoinLevelEvent evt) {
         if (evt.getEntity() instanceof LivingEntity le &&
@@ -417,6 +480,9 @@ public class UnitServerEvents {
         if (evt.getEntity() instanceof Unit unit && evt.getEntity() instanceof LivingEntity entity
             && !evt.getLevel().isClientSide) {
             allUnits.add(entity);
+
+            if (unit.getOwnerName() == null || unit.getOwnerName().isBlank())
+                assignSpawnEggOwner((ServerLevel) evt.getLevel(), unit);
 
             if (unit instanceof WorkerUnit wUnit) {
                 synchronized (savedTargetResources) {
@@ -826,7 +892,8 @@ public class UnitServerEvents {
     }
 
     @SubscribeEvent
-    // assign unit owner when spawned with an egg based on whoever is closest
+    // NOTE 1.21.1: this only fires for mob spawners, not for spawn eggs - see onSpawnEggUse/assignSpawnEggOwner
+    // above for the spawn egg path. Kept for any spawner that does report MobSpawnType.SPAWN_EGG.
     public static void onMobSpawn(net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent evt) {
         if (!evt.getSpawnType().equals(MobSpawnType.SPAWN_EGG)) {
             return;
