@@ -58,6 +58,7 @@ cd reignofnether-1.21.1neo
 
 - 需要 **JDK 21**。
 - 产物：`build/libs/reignofnether-1.5.0-1.21.1-beta-2.jar`
+- 产物文件名取自 `gradle.properties` 里的 `mod_version`；**每次构建都把 `-beta-N` 递增**，这样每个发布版本都能区分。
 - `./gradlew runClient` 启动开发客户端，`./gradlew runServer` 启动开发服务端。
 
 ## 移植说明

@@ -58,6 +58,7 @@ cd reignofnether-1.21.1neo
 
 - Requires **JDK 21**.
 - Output: `build/libs/reignofnether-1.5.0-1.21.1-beta-2.jar`
+- The artifact name comes from `mod_version` in `gradle.properties`; **increment the `-beta-N` suffix for every new build** so releases stay distinguishable.
 - `./gradlew runClient` launches a development client, `./gradlew runServer` a development server.
 
 ## Port notes
