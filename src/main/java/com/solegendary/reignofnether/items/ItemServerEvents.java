@@ -109,15 +109,17 @@ public class ItemServerEvents {
                 BuildingPlacement buildingTarget = blockTarget != null ? BuildingUtils.findBuilding(false, blockTarget) : null;
                 boolean useItem = List.of(ItemAction.USE_ON_BUILDING, ItemAction.USE_ON_BLOCK, ItemAction.USE_ON_ENTITY).contains(action);
                 if (inv.canUseUnitItems() || !useItem) {
-                    // one line per player-issued order, so a "clicking the item does nothing" report can be
-                    // diagnosed from the log (was the entity found? was an action recognised?)
-                    ReignOfNether.LOGGER.info("[ItemAction] " + action + " by " + unit.getOwnerName()
-                            + " targetId=" + targetId
-                            + " entity=" + (entity == null ? "null" : entity.getType().toString())
-                            + " itemInHand=" + (itemInHand == null ? "null" : itemInHand.toString())
-                            + " -> recognised=" + unit.getItemGoal().getActionDebug());
                     Unit.fullResetBehaviours(unit);
                     unit.getItemGoal().start(itemInHand, itemTarget, leTarget, blockTarget, buildingTarget, useItem);
+                    // one line per player-issued order, so a "clicking the item does nothing" report can be
+                    // diagnosed straight from the log (client sent it? target resolved? action recognised?)
+                    ReignOfNether.LOGGER.info("[ItemOrder] " + action + " by " + unit.getOwnerName()
+                            + " unit=" + ((Entity) unit).getType().toString() + "#" + ((Entity) unit).getId()
+                            + " targetId=" + targetId
+                            + " resolved=" + (entity == null ? "null" : entity.getType().toString())
+                            + " ground=" + (itemTarget == null ? "null" : itemTarget.getItem().toString())
+                            + " -> action=" + unit.getItemGoal().getActionDebug()
+                            + " moveTo=" + unit.getItemGoal().getMoveTarget());
                 }
             }
         } else if (unit instanceof UnitInventory inv && action == ItemAction.DROP && SandboxServer.isAnyoneASandboxPlayer()) {

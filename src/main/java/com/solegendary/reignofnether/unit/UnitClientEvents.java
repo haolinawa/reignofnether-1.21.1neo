@@ -449,6 +449,10 @@ public class UnitClientEvents {
             unit.getCheckpoints().add(new Checkpoint(ItemClientEvents.getPreselectedItems().get(0), true));
 
             if (ItemClientEvents.ENABLED) {
+                com.solegendary.reignofnether.ReignOfNether.LOGGER.info("[ItemOrder] client sends PICKUP unit="
+                        + HudClientEvents.hudSelectedEntity.getId() + " item="
+                        + ItemClientEvents.getPreselectedItems().get(0).getId() + " "
+                        + ItemClientEvents.getPreselectedItems().get(0).getItem());
                 ItemServerboundPacket.pickup(
                         HudClientEvents.hudSelectedEntity.getId(),
                         ItemClientEvents.getPreselectedItems().get(0).getId()

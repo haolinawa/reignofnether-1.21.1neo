@@ -1,5 +1,6 @@
 package com.solegendary.reignofnether.unit.goals;
 
+import com.solegendary.reignofnether.ReignOfNether;
 import com.solegendary.reignofnether.building.BuildingPlacement;
 import com.solegendary.reignofnether.building.BuildingUtils;
 import com.solegendary.reignofnether.building.buildings.shared.AbstractMarket;
@@ -43,6 +44,12 @@ public class UnitItemGoal extends MoveToTargetBlockGoal {
         this.blockTarget = blockTarget;
         this.buildingTarget = buildingTarget;
         this.useItem = useItem;
+        if (!this.mob.level().isClientSide()) {
+            ItemAction resolved = getAction();
+            ReignOfNether.LOGGER.info("[ItemGoal] start unit=" + this.mob.getType() + "#" + this.mob.getId()
+                    + " ground=" + (itemTarget == null ? "null" : itemTarget.getItem().toString())
+                    + " action=" + resolved + " moveTo=" + getMoveTargetForAction(resolved));
+        }
     }
 
     // for the server-side order log only
@@ -147,8 +154,12 @@ public class UnitItemGoal extends MoveToTargetBlockGoal {
                                 }
                                 if (!taken && this.mob instanceof Unit unit) {
                                     // resources/equipment/food are absorbed exactly like walking over the item
-                                    if (!Unit.pickupResourceItem(unit, itemTarget))
-                                        Unit.tryPickingUpEquipment(unit, itemTarget);
+                                    if (!Unit.pickupResourceItem(unit, itemTarget)) {
+                                        boolean equip = Unit.tryPickingUpEquipment(unit, itemTarget);
+                                        if (!this.mob.level().isClientSide())
+                                            ReignOfNether.LOGGER.info("[ItemGoal] PICKUP absorbed nothing from "
+                                                    + itemTarget.getItem() + " (equipment=" + equip + ")");
+                                    }
                                 }
                             }
                         }
