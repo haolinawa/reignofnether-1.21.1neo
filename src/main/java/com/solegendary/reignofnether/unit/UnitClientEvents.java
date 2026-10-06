@@ -82,6 +82,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.entity.monster.AbstractSkeleton;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -428,6 +429,19 @@ public class UnitClientEvents {
         doResolveMoveAction();
     }
 
+    // Units a "pick that item up" order should go to: every selected unit that can carry items, falling
+    // back to the HUD-selected unit when nothing is box-selected.
+    private static ArrayList<LivingEntity> getPickupOrderUnits() {
+        ArrayList<LivingEntity> units = new ArrayList<>();
+        for (LivingEntity le : selectedUnits)
+            if (le instanceof Unit unit && unit.getItemGoal() != null)
+                units.add(le);
+        if (units.isEmpty() && HudClientEvents.hudSelectedEntity instanceof Unit hudUnit
+                && hudUnit.getItemGoal() != null)
+            units.add(HudClientEvents.hudSelectedEntity);
+        return units;
+    }
+
     private static void doResolveMoveAction() {
         // open shop
         if (ItemClientEvents.ENABLED && HudClientEvents.hudSelectedEntity instanceof Unit unit && unit.getItemGoal() != null &&
@@ -442,22 +456,27 @@ public class UnitClientEvents {
             );
             return;
         }
-        // pickup item
-        else if (HudClientEvents.hudSelectedEntity instanceof Unit unit && unit.getItemGoal() != null &&
-                !ItemClientEvents.getPreselectedItems().isEmpty() && MC.player != null) {
-            unit.getCheckpoints().clear();
-            unit.getCheckpoints().add(new Checkpoint(ItemClientEvents.getPreselectedItems().get(0), true));
+        // pickup item - every selected unit that can carry items is sent, not just the HUD-selected one
+        // (previously a box selection of several units only ever moved one of them)
+        else if (!ItemClientEvents.getPreselectedItems().isEmpty() && MC.player != null) {
+            ArrayList<LivingEntity> pickupUnits = getPickupOrderUnits();
 
-            if (ItemClientEvents.ENABLED) {
-                com.solegendary.reignofnether.ReignOfNether.LOGGER.info("[ItemOrder] client sends PICKUP unit="
-                        + HudClientEvents.hudSelectedEntity.getId() + " item="
-                        + ItemClientEvents.getPreselectedItems().get(0).getId() + " "
-                        + ItemClientEvents.getPreselectedItems().get(0).getItem());
-                ItemServerboundPacket.pickup(
-                        HudClientEvents.hudSelectedEntity.getId(),
-                        ItemClientEvents.getPreselectedItems().get(0).getId()
-                );
-                return;
+            if (!pickupUnits.isEmpty()) {
+                ItemEntity itemEntity = ItemClientEvents.getPreselectedItems().get(0);
+                for (LivingEntity le : pickupUnits) {
+                    if (le instanceof Unit unit) {
+                        unit.getCheckpoints().clear();
+                        unit.getCheckpoints().add(new Checkpoint(itemEntity, true));
+                    }
+                    if (ItemClientEvents.ENABLED)
+                        ItemServerboundPacket.pickup(le.getId(), itemEntity.getId());
+                }
+                if (ItemClientEvents.ENABLED) {
+                    com.solegendary.reignofnether.ReignOfNether.LOGGER.info("[ItemOrder] client sends PICKUP to "
+                            + pickupUnits.size() + " unit(s) for item " + itemEntity.getId() + " "
+                            + itemEntity.getItem());
+                    return;
+                }
             }
         }
         // follow friendly unit
