@@ -186,7 +186,7 @@ public class UnitClientEvents {
     public static void addPreselectedUnit(LivingEntity unit) {
         if (unit instanceof Player player && (player.isSpectator() || player.isCreative()))
             return;
-        if (!FogOfWarClientEvents.isInBrightChunk(unit))
+        if (!FogOfWarClientEvents.isEntityModelVisible(unit))
             return;
         if (unit.isPassenger())
             return;
@@ -199,7 +199,7 @@ public class UnitClientEvents {
     }
     public static void addSelectedUnitNoSort(LivingEntity unit) {
         CursorClientEvents.setLeftClickAction(null);
-        if (!FogOfWarClientEvents.isInBrightChunk(unit))
+        if (!FogOfWarClientEvents.isEntityModelVisible(unit))
             return;
         if (unit.isPassenger())
             return;
@@ -210,7 +210,7 @@ public class UnitClientEvents {
     }
     public static void addSelectedUnit(LivingEntity unit) {
         CursorClientEvents.setLeftClickAction(null);
-        if (!FogOfWarClientEvents.isInBrightChunk(unit))
+        if (!FogOfWarClientEvents.isEntityModelVisible(unit))
             return;
         if (unit.isPassenger())
             return;
@@ -603,8 +603,9 @@ public class UnitClientEvents {
         if (ticksToNextVisCheck <= 0) {
             ticksToNextVisCheck = VIS_CHECK_TICKS_MAX;
 
-            // prevent selection of units out of view
-            selectedUnits.removeIf(e -> !FogOfWarClientEvents.isInBrightChunk(e));
+            // prevent selection of units out of view (or whose model is culled, e.g. outside the world
+            // border) - a box around an entity that is not drawn looks like an empty "blank" selection
+            selectedUnits.removeIf(e -> !FogOfWarClientEvents.isEntityModelVisible(e));
         }
 
         // calculate vecs used to hide leaf blocks around units
@@ -1069,7 +1070,7 @@ public class UnitClientEvents {
                     boolean isRightClickDown = MiscUtil.isRightClickDown(MC);
                     // render outline for each selected and preselected entities
                     for (Entity entity : unitsToDraw) {
-                        if (!ron$isLoadedOnClient(entity) || !FogOfWarClientEvents.isInBrightChunk(entity))
+                        if (!ron$isLoadedOnClient(entity) || !FogOfWarClientEvents.isEntityModelVisible(entity))
                             continue;
 
                         AABB entityAABB = entity.getBoundingBox();
@@ -1106,7 +1107,7 @@ public class UnitClientEvents {
                         var vcNoDepthTest = MC.renderBuffers().bufferSource().getBuffer(MyRenderer.LINES_NO_DEPTH_TEST);
                         for (LivingEntity entity : allUnits) {
                             if (!ron$isLoadedOnClient(entity) ||
-                                    !FogOfWarClientEvents.isInBrightChunk(entity) ||
+                                    !FogOfWarClientEvents.isEntityModelVisible(entity) ||
                                     entity.isPassenger())
                                 continue;
 
@@ -1126,7 +1127,7 @@ public class UnitClientEvents {
                     var vc = MC.renderBuffers().bufferSource().getBuffer(MyRenderer.LINES_UNDER_ENTITIES);
                     for (LivingEntity entity : allUnits) {
                         if (!ron$isLoadedOnClient(entity) ||
-                                !FogOfWarClientEvents.isInBrightChunk(entity) ||
+                                !FogOfWarClientEvents.isEntityModelVisible(entity) ||
                                 entity.isPassenger())
                             continue;
 

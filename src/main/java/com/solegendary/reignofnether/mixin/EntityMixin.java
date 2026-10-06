@@ -39,15 +39,27 @@ public abstract class EntityMixin {
     private void shouldRenderAtSqrDistance(
             double pDistance, CallbackInfoReturnable<Boolean> cir
     ) {
-        if (!OrthoviewClientEvents.isEnabled() || this.getType() != EntityType.ITEM)
+        if (!OrthoviewClientEvents.isEnabled())
             return;
 
         double d0 = this.bb.getSize();
         if (Double.isNaN(d0)) {
             d0 = 1.0D;
         }
+        d0 *= 64.0D * viewScale;
+
         // make item entities render at 4x normal distance
-        d0 *= 64.0D * viewScale * 4;
+        if (this.getType() == EntityType.ITEM)
+            d0 *= 4.0D;
+
+        // The orthographic camera sits up to ~100 blocks above the terrain, so vanilla's perspective-style
+        // distance cut (radius = bounding box size * 64 * viewScale, i.e. only ~67-168 blocks) removed the
+        // models of units on the far side of an RTS view, while their selection boxes kept being drawn -
+        // that is the "blank entity" look (an outlined box with nothing inside it). An orthographic view
+        // has no distance falloff, so scale the cut to the view extent instead; the frustum and the fog
+        // checks still do the real culling.
+        d0 = Math.max(d0, OrthoviewClientEvents.getZoom() * 2.0D + 160.0D);
+
         cir.setReturnValue(pDistance < d0 * d0);
     }
 

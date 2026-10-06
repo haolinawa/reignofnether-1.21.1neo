@@ -279,15 +279,23 @@ public class FogOfWarClientEvents {
                 rangedAttackerUnit.getFogRevealDuration() > 0;
     }
 
+    // Single source of truth for "this entity's model is actually drawn". The renderer below cancels
+    // entities outside the world border and entities in fogged columns, so the overlay passes (selection /
+    // preselection boxes) and the selection guards must ask the same question - otherwise they drew boxes
+    // around an entity whose model was culled, which looked like an empty "blank" selection box.
+    public static boolean isEntityModelVisible(Entity entity) {
+        if (MC.level == null)
+            return false;
+        if (!MC.level.getWorldBorder().isWithinBounds(entity.getOnPos()))
+            return false;
+        return isInBrightChunk(entity);
+    }
+
     @SubscribeEvent
     // hudSelectedEntity and portraitRendererUnit should be assigned in the same event to avoid desyncs
     public static void onRenderLivingEntity(RenderLivingEvent.Pre<? extends LivingEntity, ? extends Model> evt) {
-        if (MC.level != null && !MC.level.getWorldBorder().isWithinBounds(evt.getEntity().getOnPos())) {
-            evt.setCanceled(true);
-            return;
-        }
         // don't render entities in non-bright chunks or outside of world border
-        if (isInBrightChunk(evt.getEntity()))
+        if (isEntityModelVisible(evt.getEntity()))
             return;
 
         evt.setCanceled(true);
