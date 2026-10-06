@@ -693,8 +693,11 @@ public class OrthoviewClientEvents {
         }
     }
 
+    // Must be .Pre: NeoForge only fires MouseDragged.Post when the screen's drag handler returns false, and
+    // TopdownGui (an AbstractContainerScreen) always returns true from mouseDragged - so the camera
+    // pan/rotate drag never ran in orthoview (alt+left pan, alt+right rotate, middle-drag).
     @SubscribeEvent
-    public static void onMouseDrag(ScreenEvent.MouseDragged.Post evt) {
+    public static void onMouseDrag(ScreenEvent.MouseDragged.Pre evt) {
         if (!enabled || isCameraLocked()) {
             return;
         }
