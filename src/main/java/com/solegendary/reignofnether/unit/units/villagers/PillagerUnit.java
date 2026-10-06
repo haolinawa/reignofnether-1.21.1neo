@@ -353,8 +353,13 @@ public class PillagerUnit extends Pillager implements Unit, AttackerUnit, Ranged
                 item instanceof CrossbowItem
         );
         ItemStack itemstack = pUser.getItemInHand(interactionhand);
-        if (pUser.isHolding((is) -> is.getItem() instanceof CrossbowItem)) {
-            ((net.minecraft.world.entity.monster.CrossbowAttackMob) pUser).performCrossbowAttack(pUser, pVelocity);
+        if (itemstack.getItem() instanceof CrossbowItem crossbowItem) {
+            // Reimplement CrossbowAttackMob's default with 0 inaccuracy. Do NOT call
+            // ((CrossbowAttackMob) pUser).performCrossbowAttack(...) here: PillagerUnit implements that very
+            // interface, so the virtual call dispatched straight back to this override and recursed until the
+            // server died with a StackOverflowError. 1.20.1 used the old static CrossbowItem.performShooting
+            // helper; 1.21.1 turned it into an instance method, which is what this override now calls.
+            crossbowItem.performShooting(pUser.level(), pUser, interactionhand, itemstack, pVelocity, 0.0F, this.getTarget());
             this.playSound(SoundEvents.CROSSBOW_SHOOT, 3.0F, 0);
         }
         this.onCrossbowAttackPerformed();
