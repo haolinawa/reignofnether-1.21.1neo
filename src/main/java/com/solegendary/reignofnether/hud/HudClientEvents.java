@@ -2231,20 +2231,32 @@ public class HudClientEvents {
         }
     }
 
+    // Drawn once per frame from ScreenEvent.Render.Post. This used to hang off RenderGuiLayerEvent.Pre, which
+    // fires for EVERY vanilla gui layer, so the coordinate text was painted several times per frame and
+    // interleaved with those layers - they erased and re-drew it, which is what looked like overlapping/ghosted
+    // text while the cursor moved. The background stops a shorter coordinate string from leaving the previous
+    // one visible behind it.
     @SubscribeEvent
-    public static void onRenderOverLay(RenderGuiLayerEvent.Pre evt) {
-        if (MC.screen != null && MC.level != null && SandboxClientEvents.isSandboxPlayer() && showPreselectedBlockInfo) {
-            int y = 5;
-            for (ControlGroup controlGroup : controlGroups) {
-                if (!controlGroup.buildingBps.isEmpty() || !controlGroup.entityIds.isEmpty()) {
-                    y += 20;
-                    break;
-                }
+    public static void onDrawBlockInfo(ScreenEvent.Render.Post evt) {
+        if (MC.screen == null || MC.level == null || !SandboxClientEvents.isSandboxPlayer() || !showPreselectedBlockInfo)
+            return;
+
+        int y = 5;
+        for (ControlGroup controlGroup : controlGroups) {
+            if (!controlGroup.buildingBps.isEmpty() || !controlGroup.entityIds.isEmpty()) {
+                y += 20;
+                break;
             }
-            BlockPos bp = CursorClientEvents.getPreselectedBlockPos();
-            evt.getGuiGraphics().drawString(MC.font, I18n.get("hud.reignofnether.block_pos", bp.toShortString()), 100, y, 0xFFFFFF);
-            evt.getGuiGraphics().drawString(MC.font, MC.level.getBlockState(bp).getBlock().toString().replaceFirst("Block", ""), 100, y + 10, 0xFFFFFF);
-            evt.getGuiGraphics().drawString(MC.font, "Chunk: " + MC.level.getChunkAt(bp).getPos(), 100, y + 20, 0xFFFFFF);
         }
+        BlockPos bp = CursorClientEvents.getPreselectedBlockPos();
+        String line1 = I18n.get("hud.reignofnether.block_pos", bp.toShortString());
+        String line2 = MC.level.getBlockState(bp).getBlock().toString().replaceFirst("Block", "");
+        String line3 = "Chunk: " + MC.level.getChunkAt(bp).getPos();
+
+        int width = Math.max(MC.font.width(line1), Math.max(MC.font.width(line2), MC.font.width(line3)));
+        evt.getGuiGraphics().fill(98, y - 2, 103 + width, y + 29, 0x80000000);
+        evt.getGuiGraphics().drawString(MC.font, line1, 100, y, 0xFFFFFF);
+        evt.getGuiGraphics().drawString(MC.font, line2, 100, y + 10, 0xFFFFFF);
+        evt.getGuiGraphics().drawString(MC.font, line3, 100, y + 20, 0xFFFFFF);
     }
 }

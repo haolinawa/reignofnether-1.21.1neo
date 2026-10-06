@@ -62,13 +62,20 @@ public class Faction {
 		});
 	}
 	
+	// NOTE: do not register into SURVIVAL_FACTIONS here - this runs inside the fluent chain, i.e. before the
+	// faction key exists (setKey happens in Factions.register after the chain), so it used to add nulls and
+	// every survival wave resolved to Factions.NONE, whose spawnWave is null (crash). Factions.register does it.
 	public Faction setSpawnWave(BiConsumer<ServerLevel, Wave> spawnWave) {
 		this.spawnWave = spawnWave;
-		Factions.SURVIVAL_FACTIONS.add(this.key);
 		return this;
 	}
 	
 	public void spawnWave(ServerLevel level, Wave wave) {
+		if (this.spawnWave == null) {
+			ReignOfNether.LOGGER.error("Faction " + (key == null ? "?" : getName())
+					+ " has no spawnWave handler - survival wave " + wave.number + " skipped");
+			return;
+		}
 		this.spawnWave.accept(level, wave);
 	}
 	

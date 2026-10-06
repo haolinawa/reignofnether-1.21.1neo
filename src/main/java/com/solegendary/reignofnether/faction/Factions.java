@@ -225,7 +225,12 @@ public class Factions {
 			CLASSIC_FACTIONS.add(key);
 		if (faction.playable)
 			PLAYABLE_FACTIONS.add(key);
-		return Registry.register(ReignOfNetherRegistries.FACTIONS, key, faction).setKey(getKey(faction));
+		Faction registered = Registry.register(ReignOfNetherRegistries.FACTIONS, key, faction).setKey(getKey(faction));
+		// setSpawnWave runs before the key exists, so the survival list is filled here instead (it used to be
+		// full of nulls, which made every survival wave resolve to Factions.NONE and crash on a null handler)
+		if (registered.spawnWave != null && !SURVIVAL_FACTIONS.contains(key))
+			SURVIVAL_FACTIONS.add(key);
+		return registered;
 	}
 	
 	public static <T extends Faction> T register(ResourceLocation key, T faction) {

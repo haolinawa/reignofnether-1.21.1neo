@@ -102,11 +102,13 @@ public class ClientModEvents {
                 Blocks.WATER, Blocks.BUBBLE_COLUMN
         );
         BlockColors blockColors = evt.getBlockColors();
-        java.util.Map<Holder.Reference<Block>, BlockColor> map =
+        // NeoForge 1.21.1 keys this map by the Block instance (see BlockColorsAccessor) - reading it with a
+        // Holder always returned null, so every wrapped provider lost its vanilla biome colour (white grass).
+        java.util.Map<Block, BlockColor> map =
                 ((BlockColorsAccessor) (Object) blockColors).getBlockColors();
         for (java.util.Map.Entry<ResourceKey<Block>, Block> blockEntry : BuiltInRegistries.BLOCK.entrySet()) {
             Block block = blockEntry.getValue();
-            BlockColor existing = map.get(BuiltInRegistries.BLOCK.getHolderOrThrow(blockEntry.getKey()));
+            BlockColor existing = map.get(block);
             evt.register(new FogTintingBlockColor(existing, biomeTinted.contains(block)), block);
         }
     }
