@@ -125,7 +125,11 @@ public class UnitServerEvents {
 
     public static List<UnitActionItem> getUnitActionSlowQueue() { return unitActionSlowQueue; }
 
-    private static final ArrayList<LivingEntity> allUnits = new ArrayList<>();
+    // CopyOnWriteArrayList: the integrated server thread mutates this while client-side code (unit ticks,
+    // goals, render passes, packet handlers) iterates it in the same JVM. That race threw
+    // ConcurrentModificationException ("Ticking entity") - iteration is now snapshot-based and lock free.
+    private static final java.util.concurrent.CopyOnWriteArrayList<LivingEntity> allUnits =
+            new java.util.concurrent.CopyOnWriteArrayList<>();
 
     private static final HashMap<Integer, ChunkAccess> forcedUnitChunks = new HashMap<>();
 
@@ -150,7 +154,7 @@ public class UnitServerEvents {
         }
     }
 
-    public static ArrayList<LivingEntity> getAllUnits() {
+    public static List<LivingEntity> getAllUnits() {
         return allUnits;
     }
 

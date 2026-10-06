@@ -27,6 +27,7 @@ import com.solegendary.reignofnether.resources.ResourceCost;
 import com.solegendary.reignofnether.resources.ResourceCosts;
 import com.solegendary.reignofnether.unit.Checkpoint;
 import com.solegendary.reignofnether.unit.EnemySearchBehaviour;
+import com.solegendary.reignofnether.unit.UnitClientEvents;
 import com.solegendary.reignofnether.unit.UnitServerEvents;
 import com.solegendary.reignofnether.unit.goals.*;
 import com.solegendary.reignofnether.unit.interfaces.*;
@@ -393,7 +394,17 @@ public class VillagerUnit extends Vindicator implements Unit, WorkerUnit, Attack
                 }
 
                 boolean inRangeOfBellHolder = false;
-                for (LivingEntity le : UnitServerEvents.getAllUnits()) {
+                // Iterate a snapshot of THIS side's unit list. The server list is mutated by the integrated
+                // server thread while this tick also runs on the client thread, which crashed with
+                // ConcurrentModificationException ("Ticking entity"); on the client the client-side list is the
+                // correct one anyway and is only touched by this thread.
+                List<LivingEntity> nearbyUnits;
+                if (this.level().isClientSide())
+                    nearbyUnits = new ArrayList<>(UnitClientEvents.getAllUnits());
+                else
+                    nearbyUnits = new ArrayList<>(UnitServerEvents.getAllUnits());
+
+                for (LivingEntity le : nearbyUnits) {
                     if (le instanceof UnitInventory inv && inv.isHoldingActive(UnitItems.BELL_OF_ARMS)) {
                         int range = UnitItems.BELL_OF_ARMS_RANGE;
                         if (this.getEyePosition().distanceToSqr(le.position()) <= range * range) {

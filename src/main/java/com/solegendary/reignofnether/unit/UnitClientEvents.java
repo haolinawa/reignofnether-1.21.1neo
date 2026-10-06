@@ -136,7 +136,9 @@ public class UnitClientEvents {
     private static ArrayList<LivingEntity> sortedSelectedUnits = new ArrayList<>();
     private static boolean sortedSelectedUnitsChanged = true;
     // tracking of all existing units
-    private static final ArrayList<LivingEntity> allUnits = new ArrayList<>();
+    // see UnitServerEvents.allUnits - same defensive copy-on-write semantics
+    private static final java.util.concurrent.CopyOnWriteArrayList<LivingEntity> allUnits =
+            new java.util.concurrent.CopyOnWriteArrayList<>();
 
     public static final Map<Integer, HashMap<net.minecraft.core.Holder<MobEffect>, MobEffectIcon>> mobEffectIcons = new ConcurrentHashMap<>();
 
@@ -174,7 +176,7 @@ public class UnitClientEvents {
         return units;
     }
 
-    public static ArrayList<LivingEntity> getAllUnits() {
+    public static List<LivingEntity> getAllUnits() {
         return allUnits;
     }
 
