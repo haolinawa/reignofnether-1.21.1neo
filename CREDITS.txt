@@ -1,3 +1,10 @@
+=========================================================================
+Reign of Nether - Minecraft 1.21.1 / NeoForge port
+  Original mod, design and assets : SoLegendary (https://github.com/SoLegendary)
+  1.21.1 / NeoForge port          : haolinawa (https://github.com/haolinawa)
+  Porting and bug-fix assistance  : DeepSeek Harness (deepseek-flash)
+=========================================================================
+
 Minecraft Forge: Credits/Thank You
 
 Forge is a set of tools and modifications to the Minecraft base game code to assist 
