@@ -45,6 +45,9 @@ public class UnitItemGoal extends MoveToTargetBlockGoal {
         this.useItem = useItem;
     }
 
+    // for the server-side order log only
+    public ItemAction getActionDebug() { return getAction(); }
+
     private ItemAction getAction() {
         if (!(mob instanceof UnitInventory)) {
             return ItemAction.NONE;
@@ -56,7 +59,9 @@ public class UnitItemGoal extends MoveToTargetBlockGoal {
             return ItemAction.USE_ON_ENTITY;
         } else if (ItemUtil.isUnitItem(itemInHand) && leTarget instanceof UnitInventory) {
             return ItemAction.GIVE;
-        } else if (ItemUtil.isUnitItem(itemTarget)) {
+        } else if (itemTarget != null) {
+            // Accept any dropped item: the unit walks over and absorbs whatever it can (carried resources,
+            // equipment, food). Restricting this to unit items silently dropped the order for anything else.
             return ItemAction.PICKUP;
         } else if (buildingTarget != null) {
             return ItemAction.OPEN_SHOP;
@@ -126,14 +131,24 @@ public class UnitItemGoal extends MoveToTargetBlockGoal {
                         }
                         case PICKUP -> {
                             if (itemTarget.isAlive()) {
-                                ItemStack groundStack = itemTarget.getItem().copy();
-                                int before = groundStack.getCount();
-                                if (inv.tryAdding(groundStack)) {
-                                    this.mob.take(itemTarget, before - groundStack.getCount());
-                                    if (groundStack.isEmpty())
-                                        itemTarget.discard();
-                                    else
-                                        itemTarget.setItem(groundStack); // remainder stays on the ground
+                                boolean taken = false;
+                                // carrying unit items in the inventory still needs backpack research
+                                if (inv.canPickupUnitItems()) {
+                                    ItemStack groundStack = itemTarget.getItem().copy();
+                                    int before = groundStack.getCount();
+                                    if (inv.tryAdding(groundStack)) {
+                                        this.mob.take(itemTarget, before - groundStack.getCount());
+                                        if (groundStack.isEmpty())
+                                            itemTarget.discard();
+                                        else
+                                            itemTarget.setItem(groundStack); // remainder stays on the ground
+                                        taken = true;
+                                    }
+                                }
+                                if (!taken && this.mob instanceof Unit unit) {
+                                    // resources/equipment/food are absorbed exactly like walking over the item
+                                    if (!Unit.pickupResourceItem(unit, itemTarget))
+                                        Unit.tryPickingUpEquipment(unit, itemTarget);
                                 }
                             }
                         }

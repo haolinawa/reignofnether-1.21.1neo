@@ -520,31 +520,44 @@ public interface Unit {
         Mob unitMob = (Mob) unit;
         if (unitMob.canPickUpLoot() && (!(unit instanceof UnitInventory inv) || inv.isEmpty())) {
             for (ItemEntity itementity : unitMob.level().getEntitiesOfClass(ItemEntity.class, unitMob.getBoundingBox().inflate(1, 0, 1))) {
-                if (!itementity.isRemoved() && !itementity.getItem().isEmpty() && !itementity.hasPickUpDelay() && unitMob.isAlive()) {
-                    if (!Unit.atMaxResources(unit)) {
-                        ItemStack itemstack = itementity.getItem();
-                        ResourceSource resBlock = ResourceSources.getFromItem(itemstack.getItem());
-                        if (resBlock != null) {
-                            while (!Unit.atMaxResources(unit) && itemstack.getCount() > 0) {
-                                unitMob.onItemPickup(itementity);
-                                unitMob.take(itementity, 1);
-                                unit.getItems().add(new ItemStack(itemstack.getItem(), 1));
-                                itemstack.setCount(itemstack.getCount() - 1);
-                            }
-                            if (itemstack.getCount() <= 0)
-                                itementity.discard();
-
-                            UnitSyncClientboundPacket.sendSyncResourcesPacket(unit);
-                        }
-                        if (Unit.atThresholdResources(unit) && unit instanceof WorkerUnit workerUnit) {
-                            GatherResourcesGoal goal = workerUnit.getGatherResourceGoal();
-                            if (goal != null && goal.getTargetResourceName() != ResourceName.NONE)
-                                goal.saveAndReturnResources();
-                        }
-                    }
-                }
+                if (!itementity.isRemoved() && !itementity.getItem().isEmpty() && !itementity.hasPickUpDelay() && unitMob.isAlive())
+                    pickupResourceItem(unit, itementity);
             }
         }
+    }
+
+    // Absorbs a dropped resource item into the unit's carried resources. Shared by the walk-over pickup
+    // above and by an explicit "pick that item up" order (UnitItemGoal) so both behave identically.
+    public static boolean pickupResourceItem(Unit unit, ItemEntity itementity) {
+        Mob unitMob = (Mob) unit;
+        if (Unit.atMaxResources(unit) || itementity.isRemoved() || itementity.getItem().isEmpty()
+                || itementity.hasPickUpDelay() || !unitMob.isAlive())
+            return false;
+
+        ItemStack itemstack = itementity.getItem();
+        if (ResourceSources.getFromItem(itemstack.getItem()) == null)
+            return false;
+
+        boolean tookAny = false;
+        while (!Unit.atMaxResources(unit) && itemstack.getCount() > 0) {
+            unitMob.onItemPickup(itementity);
+            unitMob.take(itementity, 1);
+            unit.getItems().add(new ItemStack(itemstack.getItem(), 1));
+            itemstack.setCount(itemstack.getCount() - 1);
+            tookAny = true;
+        }
+        if (itemstack.getCount() <= 0)
+            itementity.discard();
+
+        if (tookAny) {
+            UnitSyncClientboundPacket.sendSyncResourcesPacket(unit);
+            if (Unit.atThresholdResources(unit) && unit instanceof WorkerUnit workerUnit) {
+                GatherResourcesGoal goal = workerUnit.getGatherResourceGoal();
+                if (goal != null && goal.getTargetResourceName() != ResourceName.NONE)
+                    goal.saveAndReturnResources();
+            }
+        }
+        return tookAny;
     }
 
     public default void dropAllResources() {

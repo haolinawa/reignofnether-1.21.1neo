@@ -90,8 +90,13 @@ public class ItemServerEvents {
         if (unit instanceof Entity unitEntity && unitEntity.level() instanceof ServerLevel serverLevel)
             level = serverLevel;
 
+        // A plain "pick that item up" order must work for every unit that can pick loot up (the same ones
+        // that absorb items they walk over) - the backpack research only gates carrying unit items, which
+        // UnitItemGoal checks when it actually adds one to the inventory.
+        boolean isPickupOrder = action == ItemAction.PICKUP;
+
         if (unit instanceof UnitInventory inv &&
-            inv.canPickupUnitItems() &&
+            (inv.canPickupUnitItems() || isPickupOrder) &&
             unit.getItemGoal() != null && level != null) {
             Entity entity = level.getEntity(targetId);
             ItemStack itemInHand = inv.get(itemUuid);
@@ -104,6 +109,13 @@ public class ItemServerEvents {
                 BuildingPlacement buildingTarget = blockTarget != null ? BuildingUtils.findBuilding(false, blockTarget) : null;
                 boolean useItem = List.of(ItemAction.USE_ON_BUILDING, ItemAction.USE_ON_BLOCK, ItemAction.USE_ON_ENTITY).contains(action);
                 if (inv.canUseUnitItems() || !useItem) {
+                    // one line per player-issued order, so a "clicking the item does nothing" report can be
+                    // diagnosed from the log (was the entity found? was an action recognised?)
+                    ReignOfNether.LOGGER.info("[ItemAction] " + action + " by " + unit.getOwnerName()
+                            + " targetId=" + targetId
+                            + " entity=" + (entity == null ? "null" : entity.getType().toString())
+                            + " itemInHand=" + (itemInHand == null ? "null" : itemInHand.toString())
+                            + " -> recognised=" + unit.getItemGoal().getActionDebug());
                     Unit.fullResetBehaviours(unit);
                     unit.getItemGoal().start(itemInHand, itemTarget, leTarget, blockTarget, buildingTarget, useItem);
                 }
