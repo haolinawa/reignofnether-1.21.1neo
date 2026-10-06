@@ -83,9 +83,12 @@ public class ItemServerEvents {
     ) {
         if (!ENABLED) return;
 
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        // Resolve the target in the unit's own level. Upstream always looked the id up in the Overworld, so
+        // right-clicking a dropped item (or another unit) in the Nether/End found nothing there and the order
+        // was silently dropped - the unit never walked over to pick the item up.
         ServerLevel level = null;
-        if (server != null) level = server.getLevel(Level.OVERWORLD);
+        if (unit instanceof Entity unitEntity && unitEntity.level() instanceof ServerLevel serverLevel)
+            level = serverLevel;
 
         if (unit instanceof UnitInventory inv &&
             inv.canPickupUnitItems() &&
