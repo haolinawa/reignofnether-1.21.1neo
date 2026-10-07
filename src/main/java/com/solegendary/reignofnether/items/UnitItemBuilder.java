@@ -58,6 +58,8 @@ public class UnitItemBuilder {
     Keybinding hotkey = null;
     boolean enableTooltip = true;
     final List<Pair<net.minecraft.core.Holder<Enchantment>, Integer>> enchantments = new ArrayList<>();
+    // resolved lazily in build(): at mod-load time no enchantment registry exists yet
+    final List<Pair<net.minecraft.resources.ResourceKey<Enchantment>, Integer>> enchantmentKeys = new ArrayList<>();
     final List<LocalizedText> pointDescs = new ArrayList<>();
     final HashMap<Holder<Attribute>, AttributeModifier> attributes = new HashMap<>();
     BiPredicate<Unit, BlockPos> onUseGround = null;
@@ -210,6 +212,16 @@ public class UnitItemBuilder {
 
     public UnitItemBuilder enchant(net.minecraft.core.Holder<Enchantment> enchantment, int level) {
         this.enchantments.add(Pair.of(enchantment, level));
+        return this;
+    }
+
+    /**
+     * Enchant by registry key. The item builder is constructed while the mod loads (static initialisers),
+     * long before any server or client registry exists, so the holder is resolved later - when the item is
+     * actually built - and skipped entirely if the registry is still unavailable.
+     */
+    public UnitItemBuilder enchantOrSkip(net.minecraft.resources.ResourceKey<Enchantment> key, int level) {
+        this.enchantmentKeys.add(Pair.of(key, level));
         return this;
     }
 

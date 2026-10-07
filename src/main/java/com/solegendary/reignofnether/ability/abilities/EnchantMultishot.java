@@ -34,6 +34,11 @@ public class EnchantMultishot extends EnchantAbility {
     }
 
     @Override
+    public net.minecraft.resources.ResourceKey<Enchantment> getEnchantmentKey() {
+        return Enchantments.MULTISHOT;
+    }
+
+    @Override
     public net.minecraft.core.Holder<Enchantment> getEnchantment() {
         return MiscUtil.enchant(Enchantments.MULTISHOT);
     }

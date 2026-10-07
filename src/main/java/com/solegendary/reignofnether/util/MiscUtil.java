@@ -133,16 +133,15 @@ public class MiscUtil {
     /** 1.21 shim for EnchantmentHelper#getDamageBonus(ItemStack, MobType) (removed). */
     public static float getDamageBonus(net.minecraft.world.item.ItemStack stack, MobType mobType) {
         if (stack == null || stack.isEmpty()) return 0.0F;
-        int sharp = net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(
-                enchant(net.minecraft.world.item.enchantment.Enchantments.SHARPNESS), stack);
+        // read the levels by registry key: this runs in combat on both sides and must not depend on a live
+        // enchantment registry (a hybrid server may not expose one on the client)
+        int sharp = getEnchantLevel(stack, net.minecraft.world.item.enchantment.Enchantments.SHARPNESS);
         float bonus = sharp > 0 ? 0.5F * sharp + 0.5F : 0.0F;
         if (mobType == MobType.UNDEAD) {
-            int l = net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(
-                    enchant(net.minecraft.world.item.enchantment.Enchantments.SMITE), stack);
+            int l = getEnchantLevel(stack, net.minecraft.world.item.enchantment.Enchantments.SMITE);
             if (l > 0) bonus += 2.5F * l;
         } else if (mobType == MobType.ARTHROPOD) {
-            int l = net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(
-                    enchant(net.minecraft.world.item.enchantment.Enchantments.BANE_OF_ARTHROPODS), stack);
+            int l = getEnchantLevel(stack, net.minecraft.world.item.enchantment.Enchantments.BANE_OF_ARTHROPODS);
             if (l > 0) bonus += 2.5F * l;
         }
         return bonus;
@@ -167,9 +166,8 @@ public class MiscUtil {
     /** 1.21 shim for EnchantmentHelper#hasFrostWalker(LivingEntity) (removed). */
     public static boolean hasFrostWalker(net.minecraft.world.entity.LivingEntity entity) {
         if (entity == null) return false;
-        return net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(
-                enchant(net.minecraft.world.item.enchantment.Enchantments.FROST_WALKER),
-                entity.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.FEET)) > 0;
+        return getEnchantLevel(entity.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.FEET),
+                net.minecraft.world.item.enchantment.Enchantments.FROST_WALKER) > 0;
     }
 
     /** 1.21 shim for Item#isEdible() (removed; food is now a data component). */
@@ -311,6 +309,26 @@ public class MiscUtil {
         fallbackRegistryAccess = registryAccess;
     }
 
+    /**
+     * Registry-free enchantment LEVEL lookup: matches the stack's enchantment holders against the given
+     * {@link net.minecraft.resources.ResourceKey} via Holder#is(ResourceKey), so it never needs a
+     * RegistryAccess. Use this for reading levels (damage, charge time, tool speed, ...) on paths that can
+     * run on a client with no server registry; {@link #enchant} is still needed when a Holder is required
+     * for WRITING an enchantment (ItemStack#enchant).
+     */
+    public static int getEnchantLevel(net.minecraft.world.item.ItemStack stack,
+            net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment> key) {
+        if (stack == null || stack.isEmpty())
+            return 0;
+        int level = 0;
+        for (net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> holder
+                : stack.getEnchantments().keySet()) {
+            if (holder.is(key))
+                level = Math.max(level, stack.getEnchantments().getLevel(holder));
+        }
+        return level;
+    }
+
     public static net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> enchant(
             net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment> key) {
         net.minecraft.core.RegistryAccess ra = null;
@@ -328,8 +346,34 @@ public class MiscUtil {
                 return reg.getHolderOrThrow(key);
             }
         }
-        throw new IllegalStateException("MiscUtil.enchant(): no enchantment registry access for "
-                + key.location() + " (server not running and no fallback set)");
+        // There is no static registry to fall back on in 1.21 (enchantments are a datapack registry), and a
+        // hybrid server may not even send the enchantment registry to the client. Throwing here killed the
+        // client - e.g. CrossbowItem#getChargeDuration runs while a pillager charges its crossbow - so
+        // degrade gracefully instead and let callers null-check.
+        warnMissingRegistryOnce(key);
+        return null;
+    }
+
+    /** Applies an enchantment defensively: silently does nothing if the registry is unavailable. */
+    public static void enchantOrSkip(net.minecraft.world.item.ItemStack stack,
+            net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment> key, int level) {
+        if (stack == null || stack.isEmpty())
+            return;
+        net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> holder = enchant(key);
+        if (holder != null)
+            stack.enchant(holder, level);
+    }
+
+    private static final java.util.Set<net.minecraft.resources.ResourceLocation> WARNED_MISSING_REGISTRY =
+            java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    private static void warnMissingRegistryOnce(
+            net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment> key) {
+        if (WARNED_MISSING_REGISTRY.add(key.location()))
+            org.slf4j.LoggerFactory.getLogger("reignofnether")
+                    .warn("[Enchant] no enchantment registry access for {} - treating it as absent; a hybrid "
+                            + "server may not send the enchantment registry, and read paths no longer need it",
+                            key.location());
     }
 
     /** 1.21 shim: Attribute.getDefaultValue() was removed; default lives in the entity AttributeSupplier. */

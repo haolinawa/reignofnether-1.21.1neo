@@ -58,15 +58,15 @@ public class UnitItems {
             .descId("merchant_trident")
             .type(UnitItemType.UPGRADE)
             .icon(ResourceLocation.fromNamespaceAndPath("minecraft", "textures/item/trident.png"))
-            .enchant(MiscUtil.enchant(Enchantments.FLAME), 1)
-            .enchant(MiscUtil.enchant(Enchantments.LOOTING), 1),
+            .enchantOrSkip(Enchantments.FLAME, 1)
+            .enchantOrSkip(Enchantments.LOOTING, 1),
             le -> le instanceof HeadhunterUnit headhunterUnit && !headhunterUnit.hasFlameTrident());
 
     public static final UnitItem MERCHANT_SWORD = new MerchantEquipmentItem(UnitItemBuilder.of(Items.NETHERITE_SWORD)
             .descId("merchant_sword")
             .type(UnitItemType.UPGRADE)
             .icon(ResourceLocation.fromNamespaceAndPath("minecraft", "textures/item/netherite_sword.png"))
-            .enchant(MiscUtil.enchant(Enchantments.FIRE_ASPECT), 1),
+            .enchantOrSkip(Enchantments.FIRE_ASPECT, 1),
             le -> le instanceof BruteUnit bruteUnit && !bruteUnit.hasEnchantedNetheriteSword());
 
     public static final UnitItem MERCHANT_CHESTPLATE = new MerchantEquipmentItem(UnitItemBuilder.of(Items.NETHERITE_CHESTPLATE)

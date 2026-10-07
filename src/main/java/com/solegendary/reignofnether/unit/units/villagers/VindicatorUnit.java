@@ -319,7 +319,7 @@ public class VindicatorUnit extends Vindicator implements Unit, AttackerUnit {
 
     public int getSharpnessLevel() {
         ItemStack itemStack = this.getItemBySlot(EquipmentSlot.MAINHAND);
-        return EnchantmentHelper.getItemEnchantmentLevel(MiscUtil.enchant(Enchantments.SHARPNESS), itemStack);
+        return MiscUtil.getEnchantLevel(itemStack, Enchantments.SHARPNESS);
     }
 
     public net.minecraft.core.Holder<Enchantment> getEnchant() {

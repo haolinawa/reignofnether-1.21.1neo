@@ -411,7 +411,7 @@ public class WitherSkeletonUnit extends WitherSkeleton implements Unit, Attacker
 
     public int getSharpnessLevel() {
         ItemStack itemStack = this.getItemBySlot(EquipmentSlot.MAINHAND);
-        return EnchantmentHelper.getItemEnchantmentLevel(MiscUtil.enchant(Enchantments.SHARPNESS), itemStack);
+        return MiscUtil.getEnchantLevel(itemStack, Enchantments.SHARPNESS);
     }
 
     @Override

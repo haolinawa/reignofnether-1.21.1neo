@@ -404,7 +404,7 @@ public class BruteUnit extends PiglinBrute implements Unit, AttackerUnit {
 
     public int getSharpnessLevel() {
         ItemStack itemStack = this.getItemBySlot(EquipmentSlot.MAINHAND);
-        return EnchantmentHelper.getItemEnchantmentLevel(MiscUtil.enchant(Enchantments.SHARPNESS), itemStack);
+        return MiscUtil.getEnchantLevel(itemStack, Enchantments.SHARPNESS);
     }
 
     @Override

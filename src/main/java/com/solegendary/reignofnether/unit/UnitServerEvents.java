@@ -673,7 +673,7 @@ public class UnitServerEvents {
             if (unitKilled.getOwnerName().isEmpty()) {
                 bountyPercent = NEUTRAL_UNIT_BOUNTY_PERCENT;
             } else if (!AlliancesServerEvents.isAlliedOrOwned(unitKilled.getOwnerName(), unit.getOwnerName())) {
-                int lootingLevel = ((LivingEntity) unit).getMainHandItem().getEnchantmentLevel(MiscUtil.enchant(Enchantments.LOOTING));
+                int lootingLevel = MiscUtil.getEnchantLevel(((LivingEntity) unit).getMainHandItem(), Enchantments.LOOTING);
                 bountyPercent = lootingLevel * UNIT_BOUNTY_PERCENT_PER_LOOTING_LEVEL;
             }
             if (bountyPercent > 0) {
@@ -931,7 +931,7 @@ public class UnitServerEvents {
         Entity directEntity = evt.getSource().getDirectEntity();
         Entity sourceEntity = evt.getSource().getEntity();
 
-        if (sourceEntity instanceof LivingEntity le && (le.getMainHandItem().getEnchantmentLevel(MiscUtil.enchant(Enchantments.PUNCH)) > 0)) {
+        if (sourceEntity instanceof LivingEntity le && MiscUtil.getEnchantLevel(le.getMainHandItem(), Enchantments.PUNCH) > 0) {
             return false;
         }
 

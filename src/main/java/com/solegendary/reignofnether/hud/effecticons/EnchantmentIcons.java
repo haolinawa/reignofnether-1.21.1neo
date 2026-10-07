@@ -22,12 +22,13 @@ public class EnchantmentIcons {
 
     private static ItemStack getEnchantedItemStack(Item item) {
         ItemStack itemStack = new ItemStack(item);
-        itemStack.enchant(MiscUtil.enchant(Enchantments.UNBREAKING), 1);
+        MiscUtil.enchantOrSkip(itemStack, Enchantments.UNBREAKING, 1);
         return itemStack;
     }
 
     public static final EnchantmentIcon MULTISHOT = new EnchantmentIcon(
             MiscUtil.enchant(Enchantments.MULTISHOT),
+            Enchantments.MULTISHOT,
             EquipmentSlot.MAINHAND,
             ResourceLocation.fromNamespaceAndPath(ReignOfNether.MOD_ID, "textures/icons/abilities/multishot.png"),
             List.of(
@@ -37,6 +38,7 @@ public class EnchantmentIcons {
     );
     public static final EnchantmentIcon QUICK_CHARGE = new EnchantmentIcon(
             MiscUtil.enchant(Enchantments.QUICK_CHARGE),
+            Enchantments.QUICK_CHARGE,
             EquipmentSlot.MAINHAND,
             getEnchantedItemStack(Items.CROSSBOW),
             List.of(
@@ -46,6 +48,7 @@ public class EnchantmentIcons {
     );
     public static final EnchantmentIcon MAIMING = new EnchantmentIcon(
             EnchantmentRegistrar.MAIMING,
+            EnchantmentRegistrar.MAIMING.getKey(),
             EquipmentSlot.MAINHAND,
             getEnchantedItemStack(Items.IRON_AXE),
             List.of(
@@ -55,6 +58,7 @@ public class EnchantmentIcons {
     );
     public static final EnchantmentIcon SHARPNESS = new EnchantmentIcon(
             MiscUtil.enchant(Enchantments.SHARPNESS),
+            Enchantments.SHARPNESS,
             EquipmentSlot.MAINHAND,
             getEnchantedItemStack(Items.IRON_SWORD),
             List.of(
@@ -64,6 +68,7 @@ public class EnchantmentIcons {
     );
     public static final EnchantmentIcon VIGOR = new EnchantmentIcon(
             EnchantmentRegistrar.VIGOR,
+            EnchantmentRegistrar.VIGOR.getKey(),
             EquipmentSlot.MAINHAND,
             getEnchantedItemStack(Items.STICK),
             List.of(
@@ -73,6 +78,7 @@ public class EnchantmentIcons {
     );
     public static final EnchantmentIcon FORTIFYING = new EnchantmentIcon(
             EnchantmentRegistrar.FORTYIFYING,
+            EnchantmentRegistrar.FORTYIFYING.getKey(),
             EquipmentSlot.CHEST,
             getEnchantedItemStack(Items.IRON_CHESTPLATE),
             List.of(
@@ -82,6 +88,7 @@ public class EnchantmentIcons {
     );
     public static final EnchantmentIcon POWER = new EnchantmentIcon(
             MiscUtil.enchant(Enchantments.POWER),
+            Enchantments.POWER,
             EquipmentSlot.MAINHAND,
             getEnchantedItemStack(Items.BOW),
             List.of(
@@ -91,6 +98,7 @@ public class EnchantmentIcons {
     );
     public static final EnchantmentIcon ZEAL = new EnchantmentIcon(
             EnchantmentRegistrar.ZEAL,
+            EnchantmentRegistrar.ZEAL.getKey(),
             EquipmentSlot.MAINHAND,
             getEnchantedItemStack(Items.NETHER_STAR),
             List.of(
@@ -100,6 +108,7 @@ public class EnchantmentIcons {
     );
     public static final EnchantmentIcon GUST = new EnchantmentIcon(
             EnchantmentRegistrar.GUST,
+            EnchantmentRegistrar.GUST.getKey(),
             EquipmentSlot.MAINHAND,
             ResourceLocation.fromNamespaceAndPath(ReignOfNether.MOD_ID, "textures/icons/abilities/gust.png"),
             List.of(
@@ -109,6 +118,7 @@ public class EnchantmentIcons {
     );
     public static final EnchantmentIcon PUNCH = new EnchantmentIcon(
             MiscUtil.enchant(Enchantments.PUNCH),
+            Enchantments.PUNCH,
             EquipmentSlot.MAINHAND,
             getEnchantedItemStack(Items.BOW),
             List.of(
@@ -118,6 +128,7 @@ public class EnchantmentIcons {
     );
     public static final EnchantmentIcon LONGSHOT = new EnchantmentIcon(
             EnchantmentRegistrar.LONGSHOT,
+            EnchantmentRegistrar.LONGSHOT.getKey(),
             EquipmentSlot.MAINHAND,
             getEnchantedItemStack(Items.SPYGLASS),
             List.of(
@@ -127,6 +138,7 @@ public class EnchantmentIcons {
     );
     public static final EnchantmentIcon PIERCING = new EnchantmentIcon(
             MiscUtil.enchant(Enchantments.PIERCING),
+            Enchantments.PIERCING,
             EquipmentSlot.MAINHAND,
             getEnchantedItemStack(Items.ARROW),
             List.of(
@@ -136,6 +148,7 @@ public class EnchantmentIcons {
     );
     public static final EnchantmentIcon BREACHING = new EnchantmentIcon(
             EnchantmentRegistrar.BREACHING,
+            EnchantmentRegistrar.BREACHING.getKey(),
             EquipmentSlot.MAINHAND,
             getEnchantedItemStack(Items.DIAMOND_AXE),
             List.of(
@@ -145,6 +158,7 @@ public class EnchantmentIcons {
     );
     public static final EnchantmentIcon THORNS = new EnchantmentIcon(
             MiscUtil.enchant(Enchantments.THORNS),
+            Enchantments.THORNS,
             EquipmentSlot.CHEST,
             getEnchantedItemStack(Items.CHAINMAIL_CHESTPLATE),
             List.of(
@@ -154,6 +168,7 @@ public class EnchantmentIcons {
     );
     public static final EnchantmentIcon FIRE_ASPECT = new EnchantmentIcon(
             MiscUtil.enchant(Enchantments.FIRE_ASPECT),
+            Enchantments.FIRE_ASPECT,
             EquipmentSlot.MAINHAND,
             getEnchantedItemStack(Items.NETHERITE_SWORD),
             List.of(
@@ -163,6 +178,7 @@ public class EnchantmentIcons {
     );
     public static final EnchantmentIcon FLAME = new EnchantmentIcon(
             MiscUtil.enchant(Enchantments.FLAME),
+            Enchantments.FLAME,
             EquipmentSlot.MAINHAND,
             getEnchantedItemStack(Items.TRIDENT),
             List.of(
@@ -173,6 +189,7 @@ public class EnchantmentIcons {
 
     public static final EnchantmentIcon LOOTING = new EnchantmentIcon(
             MiscUtil.enchant(Enchantments.LOOTING),
+            Enchantments.LOOTING,
             EquipmentSlot.MAINHAND,
             getEnchantedItemStack(Items.EMERALD),
             List.of(

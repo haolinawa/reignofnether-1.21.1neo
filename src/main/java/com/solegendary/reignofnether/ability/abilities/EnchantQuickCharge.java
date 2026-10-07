@@ -35,6 +35,11 @@ public class EnchantQuickCharge extends EnchantAbility {
     }
 
     @Override
+    public net.minecraft.resources.ResourceKey<Enchantment> getEnchantmentKey() {
+        return Enchantments.QUICK_CHARGE;
+    }
+
+    @Override
     public net.minecraft.core.Holder<Enchantment> getEnchantment() {
         return MiscUtil.enchant(Enchantments.QUICK_CHARGE);
     }

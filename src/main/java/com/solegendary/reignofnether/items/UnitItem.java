@@ -62,6 +62,8 @@ public abstract class UnitItem implements RangeIndicator {
     public final Keybinding hotkey;
     public boolean enableTooltip;
     protected final List<Pair<net.minecraft.core.Holder<Enchantment>, Integer>> enchantments;
+    // registry-key form (see UnitItemBuilder#enchantOrSkip): resolved at use time, skipped if unavailable
+    protected final List<Pair<net.minecraft.resources.ResourceKey<Enchantment>, Integer>> enchantmentKeys;
     public final HashMap<Holder<Attribute>, AttributeModifier> attributes;
     public BiPredicate<Unit, BlockPos> onUseGround;
     public BiPredicate<Unit, LivingEntity> onUseEntity;
@@ -127,6 +129,7 @@ public abstract class UnitItem implements RangeIndicator {
                 : new LocalizedText("item.reignofnether." + descId + ".desc");
         this.hotkey = builder.hotkey;
         this.enchantments = List.copyOf(builder.enchantments);
+        this.enchantmentKeys = List.copyOf(builder.enchantmentKeys);
         this.pointDescs = List.copyOf(builder.pointDescs);
         this.enableTooltip = builder.enableTooltip;
         this.attributes = builder.attributes;
@@ -161,6 +164,9 @@ public abstract class UnitItem implements RangeIndicator {
         ItemStack itemStack = new ItemStack(item);
         for (Pair<net.minecraft.core.Holder<Enchantment>, Integer> pair : enchantments) {
             itemStack.enchant(pair.getFirst(), pair.getSecond());
+        }
+        for (Pair<net.minecraft.resources.ResourceKey<Enchantment>, Integer> pair : enchantmentKeys) {
+            MiscUtil.enchantOrSkip(itemStack, pair.getFirst(), pair.getSecond());
         }
         MiscUtil.getOrCreateItemTag(itemStack).putUUID("uuid", UUID.randomUUID());
         itemStack.setCount(defaultStackCount);

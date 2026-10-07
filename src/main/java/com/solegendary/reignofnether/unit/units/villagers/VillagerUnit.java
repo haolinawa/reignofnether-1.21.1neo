@@ -388,7 +388,7 @@ public class VillagerUnit extends Vindicator implements Unit, WorkerUnit, Attack
             this.callToArmsGoal.tick();
 
             if (tickCount % 20 == 0) {
-                if (getMainHandItem().getEnchantments().getLevel(MiscUtil.enchant(Enchantments.EFFICIENCY)) > 0 &&
+                if (MiscUtil.getEnchantLevel(getMainHandItem(), Enchantments.EFFICIENCY) > 0 &&
                     !hasEffectWithDuration(MobEffectRegistrar.TEMPORARY_EFFICIENCY)) {
                     MiscUtil.clearEnchantments(getMainHandItem());
                 }
@@ -628,7 +628,7 @@ public class VillagerUnit extends Vindicator implements Unit, WorkerUnit, Attack
     public void setItemSlot(EquipmentSlot pSlot, ItemStack pStack) {
         if (pStack.getItem() != Items.AIR && pSlot == EquipmentSlot.MAINHAND &&
             this.hasEffectWithDuration(MobEffectRegistrar.TEMPORARY_EFFICIENCY)) {
-            pStack.enchant(MiscUtil.enchant(Enchantments.EFFICIENCY), 1);
+            MiscUtil.enchantOrSkip(pStack, Enchantments.EFFICIENCY, 1);
         }
         super.setItemSlot(pSlot, pStack);
     }

@@ -353,7 +353,7 @@ public class SkeletonUnit extends Skeleton implements Unit, AttackerUnit, Ranged
 
     public int getPowerLevel() {
         ItemStack itemStack = this.getItemBySlot(EquipmentSlot.MAINHAND);
-        return EnchantmentHelper.getItemEnchantmentLevel(MiscUtil.enchant(Enchantments.POWER), itemStack);
+        return MiscUtil.getEnchantLevel(itemStack, Enchantments.POWER);
     }
 
     @Override

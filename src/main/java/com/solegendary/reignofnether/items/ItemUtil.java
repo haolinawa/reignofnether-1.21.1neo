@@ -65,6 +65,10 @@ public class ItemUtil {
                     if (EnchantmentHelper.getItemEnchantmentLevel(pair.getFirst(), itemStack) != pair.getSecond())
                         continue outerLoop;
                 }
+                for (Pair<net.minecraft.resources.ResourceKey<Enchantment>, Integer> pair : unitItem.enchantmentKeys) {
+                    if (MiscUtil.getEnchantLevel(itemStack, pair.getFirst()) != pair.getSecond())
+                        continue outerLoop;
+                }
                 return unitItem;
             }
         }

@@ -603,7 +603,7 @@ public class EnchanterUnit extends Vindicator implements AttackerUnit, HeroUnit,
         if (level().isClientSide) return;
 
         if (entity.getMainHandItem().getItem() != Items.AIR)
-            entity.getMainHandItem().enchant(MiscUtil.enchant(Enchantments.EFFICIENCY), 1);
+            MiscUtil.enchantOrSkip(entity.getMainHandItem(), Enchantments.EFFICIENCY, 1);
         entity.addEffect(new MobEffectInstance(MobEffectRegistrar.TEMPORARY_EFFICIENCY, CivilEnchantment.DURATION_SECONDS * 20));
         playEnchantSound();
 

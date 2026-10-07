@@ -181,10 +181,13 @@ public class MartialEnchantment extends AbstractEnchantment {
 
     @Override
     public boolean canEnchant(LivingEntity le) {
-        return getAllowedMobTypes().contains(le.getType()) &&
-                le instanceof Unit &&
-                !le.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty() &&
-                !(le.getItemBySlot(EquipmentSlot.MAINHAND).getEnchantments().getLevel(getEnchantmentForUnit(le)) > 0);
+        if (!(getAllowedMobTypes().contains(le.getType()) && le instanceof Unit))
+            return false;
+        if (le.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty())
+            return false;
+        // the enchantment holder can be null when the registry is unavailable, so don't call getLevel on it
+        net.minecraft.core.Holder<Enchantment> enchantment = getEnchantmentForUnit(le);
+        return enchantment == null || !(le.getItemBySlot(EquipmentSlot.MAINHAND).getEnchantments().getLevel(enchantment) > 0);
     }
 
     @Override

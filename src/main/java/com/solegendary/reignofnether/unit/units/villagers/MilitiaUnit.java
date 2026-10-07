@@ -238,9 +238,9 @@ public class MilitiaUnit extends Vindicator implements Unit, AttackerUnit, Range
         int damageMod = 0;
         ItemStack weaponStack = new ItemStack(weapon);
         if (weapon == Items.STONE_SWORD && swordEnchanted) {
-            weaponStack.enchant(MiscUtil.enchant(Enchantments.SHARPNESS), 1);
+            MiscUtil.enchantOrSkip(weaponStack, Enchantments.SHARPNESS, 1);
         } else if (weapon == Items.BOW && bowEnchanted) {
-            weaponStack.enchant(MiscUtil.enchant(Enchantments.POWER), 1);
+            MiscUtil.enchantOrSkip(weaponStack, Enchantments.POWER, 1);
         }
         AttributeModifier mod = new AttributeModifier(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("reignofnether", UUID.randomUUID().toString()), damageMod, AttributeModifier.Operation.ADD_VALUE);
         MiscUtil.addAttributeModifier(weaponStack, Attributes.ATTACK_DAMAGE, mod, net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND);
@@ -485,12 +485,12 @@ public class MilitiaUnit extends Vindicator implements Unit, AttackerUnit, Range
 
     public int getSharpnessLevel() {
         ItemStack itemStack = this.getItemBySlot(EquipmentSlot.MAINHAND);
-        return EnchantmentHelper.getItemEnchantmentLevel(MiscUtil.enchant(Enchantments.SHARPNESS), itemStack);
+        return MiscUtil.getEnchantLevel(itemStack, Enchantments.SHARPNESS);
     }
 
     public int getPowerLevel() {
         ItemStack itemStack = this.getItemBySlot(EquipmentSlot.MAINHAND);
-        return EnchantmentHelper.getItemEnchantmentLevel(MiscUtil.enchant(Enchantments.POWER), itemStack);
+        return MiscUtil.getEnchantLevel(itemStack, Enchantments.POWER);
     }
 
     @Override

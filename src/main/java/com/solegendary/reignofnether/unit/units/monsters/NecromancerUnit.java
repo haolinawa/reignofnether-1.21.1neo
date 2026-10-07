@@ -594,12 +594,12 @@ public class NecromancerUnit extends Skeleton implements Unit, AttackerUnit, Ran
                     sword = new ItemStack(Items.IRON_SWORD);
                 }
                 if (soulRank >= 1)
-                    chestPlate.enchant(MiscUtil.enchant(Enchantments.THORNS), 3);
+                    MiscUtil.enchantOrSkip(chestPlate, Enchantments.THORNS, 3);
                 if (soulRank >= 2)
-                    leggings.enchant(MiscUtil.enchant(Enchantments.THORNS), 3);
+                    MiscUtil.enchantOrSkip(leggings, Enchantments.THORNS, 3);
                 if (soulRank >= 3) {
-                    boots.enchant(MiscUtil.enchant(Enchantments.THORNS), 2);
-                    helmet.enchant(MiscUtil.enchant(Enchantments.THORNS), 2);
+                    MiscUtil.enchantOrSkip(boots, Enchantments.THORNS, 2);
+                    MiscUtil.enchantOrSkip(helmet, Enchantments.THORNS, 2);
                 }
                 zombieUnit.setItemSlot(EquipmentSlot.HEAD, helmet);
                 zombieUnit.setItemSlot(EquipmentSlot.CHEST, chestPlate);

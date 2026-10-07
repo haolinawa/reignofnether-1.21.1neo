@@ -329,11 +329,11 @@ public class ZombieUnit extends Zombie implements Unit, AttackerUnit, Convertabl
 
     public int getThornsLevel() {
         int thornsLevel = 0;
-        if (this.getItemBySlot(EquipmentSlot.CHEST).getEnchantmentLevel(MiscUtil.enchant(Enchantments.THORNS)) > 0)
+        if (MiscUtil.getEnchantLevel(this.getItemBySlot(EquipmentSlot.CHEST), Enchantments.THORNS) > 0)
             thornsLevel += 1;
-        if (this.getItemBySlot(EquipmentSlot.LEGS).getEnchantmentLevel(MiscUtil.enchant(Enchantments.THORNS)) > 0)
+        if (MiscUtil.getEnchantLevel(this.getItemBySlot(EquipmentSlot.LEGS), Enchantments.THORNS) > 0)
             thornsLevel += 1;
-        if (this.getItemBySlot(EquipmentSlot.FEET).getEnchantmentLevel(MiscUtil.enchant(Enchantments.THORNS)) > 0)
+        if (MiscUtil.getEnchantLevel(this.getItemBySlot(EquipmentSlot.FEET), Enchantments.THORNS) > 0)
             thornsLevel += 1;
         return thornsLevel;
     }

@@ -34,6 +34,11 @@ public class EnchantSharpness extends EnchantAbility {
     }
 
     @Override
+    public net.minecraft.resources.ResourceKey<Enchantment> getEnchantmentKey() {
+        return Enchantments.SHARPNESS;
+    }
+
+    @Override
     public net.minecraft.core.Holder<Enchantment> getEnchantment() {
         return MiscUtil.enchant(Enchantments.SHARPNESS);
     }

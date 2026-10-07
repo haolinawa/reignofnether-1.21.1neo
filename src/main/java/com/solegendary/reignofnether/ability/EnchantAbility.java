@@ -9,6 +9,7 @@ import com.solegendary.reignofnether.resources.Resources;
 import com.solegendary.reignofnether.resources.ResourcesClientEvents;
 import com.solegendary.reignofnether.resources.ResourcesServerEvents;
 import com.solegendary.reignofnether.unit.UnitAction;
+import com.solegendary.reignofnether.util.MiscUtil;
 import com.solegendary.reignofnether.unit.interfaces.Unit;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
@@ -53,6 +54,15 @@ public abstract class EnchantAbility extends Ability {
         return null;
     }
 
+    /**
+     * Registry key of the enchantment this ability applies. Preferring the key keeps the level lookup and
+     * the application independent of a live enchantment registry (see MiscUtil#getEnchantLevel), which is
+     * what made these paths crash on clients/hybrid servers where the registry is not available.
+     */
+    public net.minecraft.resources.ResourceKey<Enchantment> getEnchantmentKey() {
+        return null;
+    }
+
     public boolean canAfford(BuildingPlacement buildingUsing) {
         Resources res = null;
         if (buildingUsing.getLevel().isClientSide()) {
@@ -74,7 +84,11 @@ public abstract class EnchantAbility extends Ability {
     }
 
     protected boolean hasSameEnchant(LivingEntity entity) {
-        return entity.getItemBySlot(equipmentSlot).getEnchantments().getLevel(getEnchantment()) > 0;
+        net.minecraft.resources.ResourceKey<Enchantment> key = getEnchantmentKey();
+        if (key != null)
+            return MiscUtil.getEnchantLevel(entity.getItemBySlot(equipmentSlot), key) > 0;
+        net.minecraft.core.Holder<Enchantment> holder = getEnchantment();
+        return holder != null && entity.getItemBySlot(equipmentSlot).getEnchantments().getLevel(holder) > 0;
     }
 
     protected void doEnchant(LivingEntity entity) {
@@ -90,7 +104,11 @@ public abstract class EnchantAbility extends Ability {
                 mutable.removeIf(h -> h.equals(enchantToRemove));
                 item.set(net.minecraft.core.component.DataComponents.ENCHANTMENTS, mutable.toImmutable());
             }
-            item.enchant(getEnchantment(), enchantmentLevel);
+            net.minecraft.resources.ResourceKey<Enchantment> key = getEnchantmentKey();
+            if (key != null)
+                MiscUtil.enchantOrSkip(item, key, enchantmentLevel);
+            else if (getEnchantment() != null)
+                item.enchant(getEnchantment(), enchantmentLevel);
         }
     }
 

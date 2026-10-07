@@ -999,9 +999,13 @@ public interface Unit {
         LivingEntity entity = (LivingEntity) this;
         for (EnchantmentIcon enchantIcon : EnchantmentIcons.ENCHANTMENT_ICONS) {
             ItemStack itemStack = entity.getItemBySlot(enchantIcon.slot);
+            // match on the enchantment's registry key: comparing Holder identity required the icon to hold a
+            // resolved holder, which cannot be built at class-load time (no registry yet) and is not stable
+            // across registry instances
             for (net.minecraft.core.Holder<Enchantment> enchant : itemStack.getEnchantments().keySet()) {
-                if (enchant == enchantIcon.enchantment) {
+                if (enchantIcon.enchantmentKey != null && enchant.is(enchantIcon.enchantmentKey)) {
                     icons.add(enchantIcon);
+                    break;
                 }
             }
         }

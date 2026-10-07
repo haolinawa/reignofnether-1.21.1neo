@@ -335,9 +335,9 @@ public class HeadhunterUnit extends PiglinBrute implements Unit, AttackerUnit, R
             this.setItemSlot(EquipmentSlot.MAINHAND, tridentStack);
         }
         //if (ResearchServerEvents.playerHasResearch(getOwnerName(), ProductionItems.RESEARCH_HEAVY_TRIDENTS))
-        //    this.getItemBySlot(EquipmentSlot.MAINHAND).enchant(MiscUtil.enchant(Enchantments.PUNCH), 1);
+        //    MiscUtil.enchantOrSkip(this.getItemBySlot(EquipmentSlot.MAINHAND), Enchantments.PUNCH, 1);
         if (ResearchServerEvents.playerHasResearch(getOwnerName(), ProductionItems.RESEARCH_GREEDY_TRIDENTS))
-            this.getItemBySlot(EquipmentSlot.MAINHAND).enchant(MiscUtil.enchant(Enchantments.LOOTING), 1);
+            MiscUtil.enchantOrSkip(this.getItemBySlot(EquipmentSlot.MAINHAND), Enchantments.LOOTING, 1);
     }
 
     @Override
@@ -356,7 +356,7 @@ public class HeadhunterUnit extends PiglinBrute implements Unit, AttackerUnit, R
 
     public boolean hasFlameTrident() {
         ItemStack itemStack = this.getItemBySlot(EquipmentSlot.MAINHAND);
-        return itemStack.getEnchantments().getLevel(MiscUtil.enchant(Enchantments.FLAME)) > 0;
+        return MiscUtil.getEnchantLevel(itemStack, Enchantments.FLAME) > 0;
     }
 
     @Override
@@ -397,7 +397,7 @@ public class HeadhunterUnit extends PiglinBrute implements Unit, AttackerUnit, R
 
     public int getPowerLevel() {
         ItemStack itemStack = this.getItemBySlot(EquipmentSlot.MAINHAND);
-        return EnchantmentHelper.getItemEnchantmentLevel(MiscUtil.enchant(Enchantments.POWER), itemStack);
+        return MiscUtil.getEnchantLevel(itemStack, Enchantments.POWER);
     }
 
     @Override

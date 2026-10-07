@@ -114,9 +114,9 @@ public class MonsterWaveSpawner {
                 entity.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.CHAINMAIL_BOOTS));
             }
             if (tier >= 6) {
-                entity.getItemBySlot(EquipmentSlot.CHEST).enchant(MiscUtil.enchant(Enchantments.PROTECTION), 1);
-                entity.getItemBySlot(EquipmentSlot.LEGS).enchant(MiscUtil.enchant(Enchantments.PROTECTION), 1);
-                entity.getItemBySlot(EquipmentSlot.FEET).enchant(MiscUtil.enchant(Enchantments.PROTECTION), 1);
+                MiscUtil.enchantOrSkip(entity.getItemBySlot(EquipmentSlot.CHEST), Enchantments.PROTECTION, 1);
+                MiscUtil.enchantOrSkip(entity.getItemBySlot(EquipmentSlot.LEGS), Enchantments.PROTECTION, 1);
+                MiscUtil.enchantOrSkip(entity.getItemBySlot(EquipmentSlot.FEET), Enchantments.PROTECTION, 1);
             }
         }
     }
