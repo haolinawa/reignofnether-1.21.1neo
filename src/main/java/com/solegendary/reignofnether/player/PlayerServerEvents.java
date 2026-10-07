@@ -1164,6 +1164,7 @@ public class PlayerServerEvents {
             } catch (ConcurrentModificationException e) {
                 System.err.println("ConcurrentModificationException during beaconVictory: " + e.getMessage());
             }
+            // survival is endless: the beacon win clears the wave but the player keeps playing
         } else {
             boolean defeatedAny = false;
             for (RTSPlayer p : rtsPlayers) {
@@ -1190,6 +1191,65 @@ public class PlayerServerEvents {
                 broadcastMatchStats(winners);
             }
         }
+
+        // Release the winner (and their allies) so they land back on the faction / game mode selection
+        // screen: the match is over, so they must be able to start (or spectate) a new one instead of
+        // being stuck in the won match with the faction and mode locked.
+        returnWinnerToLobby(playerName);
+        for (String allyName : AlliancesServerEvents.getAllAllies(playerName))
+            returnWinnerToLobby(allyName);
+    }
+
+    // Puts the winner back into the pre-match state so they can pick a faction / game mode again,
+    // exactly like a defeated player can. Without this the beacon winner stayed a playing RTS player
+    // forever: the game mode and faction stayed locked, so there was no way back to the match start menu.
+    private static void returnWinnerToLobby(String playerName) {
+        if (SurvivalServerEvents.isEnabled())
+            return; // endless wave defence: a beacon win ends the wave, not the match
+
+        synchronized (rtsPlayers) {
+            // capture the entry BEFORE removing it, so the post game scoreboard still lists this player
+            RTSPlayer rtsPlayer = getRTSPlayer(playerName);
+            if (rtsPlayer != null) {
+                rtsPlayers.remove(rtsPlayer);
+                if (!postGameRtsPlayers.contains(rtsPlayer))
+                    postGameRtsPlayers.add(rtsPlayer);
+            }
+        }
+        FogOfWarServerEvents.invalidateRtsCache();
+        releasePlayerAssets(playerName);
+        PlayerClientboundPacket.removeRTSPlayer(playerName);
+        saveRTSPlayers();
+
+        // Unlock the match and the game mode (GameMode.NONE clears the client's gameModeLocked flag) so
+        // the player can change mode and pick a faction again - the same freedom a defeated player gets.
+        // Deliberately no forced game mode change: defeat does not touch it either.
+        setRTSLock(false);
+        GameModeClientboundPacket.setAndLockAllClientGameModes(GameMode.NONE);
+    }
+
+    // Clears unit/building ownership so the released board no longer belongs to the ex-winner.
+    private static void releasePlayerAssets(String playerName) {
+        for (LivingEntity entity : UnitServerEvents.getAllUnits())
+            if (entity instanceof Unit unit && unit.getOwnerName().equals(playerName)) {
+                unit.resetBehaviours();
+                Unit.resetBehaviours(unit);
+                if (unit instanceof AttackerUnit aUnit)
+                    AttackerUnit.resetBehaviours(aUnit);
+                if (unit instanceof WorkerUnit wUnit)
+                    WorkerUnit.resetBehaviours(wUnit);
+                unit.setOwnerName("");
+            }
+        for (BuildingPlacement building : BuildingServerEvents.getBuildings())
+            if (building.ownerName.equals(playerName)) {
+                if (building instanceof ProductionPlacement productionBuilding)
+                    productionBuilding.productionQueue.clear();
+                building.ownerName = "";
+            }
+        ResearchServerEvents.removeAllResearchFor(playerName);
+        ResearchServerEvents.syncResearch(playerName);
+        ResearchServerEvents.removeAllCheatsFor(playerName);
+        ResourcesServerEvents.resourcesList.removeIf(rl -> rl.ownerName.equals(playerName));
     }
 
     // Sends the final per-player scoreboard to all clients so they can show the

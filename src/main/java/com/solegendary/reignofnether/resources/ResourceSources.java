@@ -105,16 +105,27 @@ public class ResourceSources {
 
     // is the given item an item that is worth resources?
     // used for unit item pickups and player resource deposits
+    //
+    // The linear scan over every ResourceSource (41 of them, each with an item list and a block list) was
+    // called for EVERY carried ItemStack on EVERY capacity check. A unit absorbing a big dropped pile does
+    // that once per single absorbed item while its carried list grows one stack per item, which is a very
+    // hot O(n^2) - long enough to freeze the server thread. Items are a fixed registry, so memoise the
+    // answer; ConcurrentHashMap keeps it safe from the server tick thread.
+    private static final java.util.Map<Item, java.util.Optional<ResourceSource>> ITEM_SOURCE_CACHE =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     public static ResourceSource getFromItem(Item item) {
-        for (List<ResourceSource> resourceSources : RESOURCE_BLOCK_LISTS)
-            for (ResourceSource resourceSource : resourceSources) {
-                if (resourceSource.items.contains(item))
-                    return resourceSource;
-                for (Block block : resourceSource.validBlocks)
-                    if (block.asItem() == item)
-                        return resourceSource;
-            }
-        return null;
+        return ITEM_SOURCE_CACHE.computeIfAbsent(item, it -> {
+            for (List<ResourceSource> resourceSources : RESOURCE_BLOCK_LISTS)
+                for (ResourceSource resourceSource : resourceSources) {
+                    if (resourceSource.items.contains(it))
+                        return java.util.Optional.of(resourceSource);
+                    for (Block block : resourceSource.validBlocks)
+                        if (block.asItem() == it)
+                            return java.util.Optional.of(resourceSource);
+                }
+            return java.util.Optional.empty();
+        }).orElse(null);
     }
 
     // return a list of food items that a worker gets when killing a huntable animal to make it more consistent

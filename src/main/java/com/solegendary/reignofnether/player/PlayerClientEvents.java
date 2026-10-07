@@ -249,6 +249,11 @@ public class PlayerClientEvents {
         }
         MC.gui.setTitle(Component.translatable("titles.reignofnether.victorious"));
         MC.player.playSound(SoundRegistrar.VICTORY.get(), 0.5f, 1.0f);
+        // The match is over for this player: release the game mode so the faction / mode selection
+        // screen (and the "change mode" button) becomes usable again, exactly like after a defeat.
+        ClientGameModeHelper.gameModeLocked = false;
+        HudClientEvents.controlGroups.clear();
+        ResearchClient.removeAllCheats();
     }
 
     public static void addRTSPlayer(String playerName, Faction faction, Long id, int startPosColorId, boolean isDogPerson) {

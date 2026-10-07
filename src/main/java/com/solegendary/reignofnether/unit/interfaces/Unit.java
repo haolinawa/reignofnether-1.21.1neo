@@ -535,17 +535,32 @@ public interface Unit {
             return false;
 
         ItemStack itemstack = itementity.getItem();
-        if (ResourceSources.getFromItem(itemstack.getItem()) == null)
+        ResourceSource source = ResourceSources.getFromItem(itemstack.getItem());
+        if (source == null)
             return false;
 
-        boolean tookAny = false;
-        while (!Unit.atMaxResources(unit) && itemstack.getCount() > 0) {
-            unitMob.onItemPickup(itementity);
-            unitMob.take(itementity, 1);
-            unit.getItems().add(new ItemStack(itemstack.getItem(), 1));
-            itemstack.setCount(itemstack.getCount() - 1);
-            tookAny = true;
-        }
+        // Work out how much room is left ONCE and absorb that many in a single stack, instead of calling
+        // Unit.atMaxResources (which re-totals every carried stack) once per individual item and appending
+        // one single-item stack per iteration. Picking up a large dropped pile used to be quadratic in the
+        // number of items, on the server thread, which stalled the game for seconds.
+        int capacityLeft = Math.max(0, unit.getMaxResources() - Resources.getTotalResourcesFromItems(unit.getItems()).getTotalValue());
+        if (capacityLeft <= 0)
+            return false;
+        int byCapacity = source.resourceValue <= 0 ? itemstack.getCount() : capacityLeft / source.resourceValue;
+        // keep the old behaviour of always accepting one item as long as there is ANY room, even if that
+        // one item takes the unit slightly past its cap
+        if (byCapacity <= 0)
+            byCapacity = 1;
+        int toTake = Math.min(itemstack.getCount(), byCapacity);
+        if (toTake <= 0)
+            return false;
+
+        unitMob.onItemPickup(itementity);
+        unitMob.take(itementity, toTake);
+        mergeIntoCarriedItems(unit.getItems(), itementity.getItem().getItem(), toTake);
+        itemstack.setCount(itemstack.getCount() - toTake);
+
+        boolean tookAny = toTake > 0;
         if (itemstack.getCount() <= 0)
             itementity.discard();
 
@@ -558,6 +573,28 @@ public interface Unit {
             }
         }
         return tookAny;
+    }
+
+    // Adds `count` of `item` to the carried list, topping up an existing stack first so a big pickup stays
+    // a handful of stacks instead of one stack per absorbed item.
+    private static void mergeIntoCarriedItems(List<ItemStack> items, Item item, int count) {
+        if (count <= 0)
+            return;
+        for (ItemStack carried : items) {
+            if (carried.is(item) && carried.getCount() < carried.getMaxStackSize()) {
+                int room = carried.getMaxStackSize() - carried.getCount();
+                int moved = Math.min(room, count);
+                carried.setCount(carried.getCount() + moved);
+                count -= moved;
+                if (count <= 0)
+                    return;
+            }
+        }
+        while (count > 0) {
+            int chunk = Math.min(count, new ItemStack(item).getMaxStackSize());
+            items.add(new ItemStack(item, chunk));
+            count -= chunk;
+        }
     }
 
     public default void dropAllResources() {
