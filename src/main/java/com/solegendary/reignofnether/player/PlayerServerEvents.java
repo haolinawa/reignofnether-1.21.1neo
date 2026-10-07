@@ -246,7 +246,13 @@ public class PlayerServerEvents {
                     rtsPlayer.serverTick();
 
                 for (RTSPlayer rtsPlayer : rtsPlayers) {
-                    if (rtsPlayer.beaconOwnerTicks == Beacon.getTicksToWin(serverLevel)) {
+                    // >= rather than ==: the counter may legitimately overshoot the target (e.g. a game rule
+                    // change mid-count, a laggy tick, or several beacons) and an equality test would then
+                    // silently never fire, leaving the HUD at 0s with no victory. The flag keeps it to a
+                    // single declaration - an equality test used to provide that by accident.
+                    if (rtsPlayer.beaconOwnerTicks >= Beacon.getTicksToWin(serverLevel)
+                            && !rtsPlayer.beaconVictoryDeclared) {
+                        rtsPlayer.beaconVictoryDeclared = true;
                         PlayerServerEvents.beaconVictory(rtsPlayer.name);
                         break;
                     }
@@ -1179,7 +1185,10 @@ public class PlayerServerEvents {
     public static String getBeaconWinTime(String playerName) {
         for (RTSPlayer rtsPlayer : rtsPlayers) {
             if (rtsPlayer.name.equals(playerName)) {
-                return TimeUtils.getTimeStrFromTicks(Beacon.getTicksToWin(serverLevel) - rtsPlayer.beaconOwnerTicks);
+                // clamp: the counter can pass the target, and a negative remainder would render as a
+                // nonsense time on the HUD
+                return TimeUtils.getTimeStrFromTicks(
+                        Math.max(0, Beacon.getTicksToWin(serverLevel) - rtsPlayer.beaconOwnerTicks));
             }
         }
         return TimeUtils.getTimeStrFromTicks(Beacon.getTicksToWin(serverLevel));

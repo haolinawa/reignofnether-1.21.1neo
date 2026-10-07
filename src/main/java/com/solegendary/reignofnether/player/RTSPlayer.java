@@ -24,6 +24,9 @@ public class RTSPlayer {
     public int ticksWithoutCapitol = 0;
     public Faction faction;
     public int beaconOwnerTicks = 0; // ticks owning a beacon - will win upon reaching
+    // The victory check is a >= test (the counter can overshoot its target), so the win must be
+    // declared exactly once per player - otherwise the winner would re-trigger every tick.
+    public boolean beaconVictoryDeclared = false;
     public int startPosColorId = 0;
     public RTSPlayerScores scores = new RTSPlayerScores();
     public int scenarioRoleIndex = -1;
@@ -149,17 +152,27 @@ public class RTSPlayer {
             this.ticksWithoutCapitol = 0;
         }
 
+        // Count one tick per RTS player per server tick, NOT one per beacon: with two or more max level
+        // beacons the counter used to advance by 2+ per tick and skipped over the exact win value, so the
+        // countdown would reach 0 on the HUD but the victory never triggered (the check was an equality
+        // test against Beacon.getTicksToWin). Owning several beacons must not speed the timer up.
+        BeaconPlacement countingBeacon = null;
         for (BuildingPlacement building : BuildingServerEvents.getBuildings()) {
-            if (building instanceof BeaconPlacement beacon && beacon.isBuilt && building.ownerName.equals(this.name)) {
-                if (beacon.getUpgradeLevel() == Beacon.MAX_UPGRADE_LEVEL) {
-                    beaconOwnerTicks += 1;
-                    if (beaconOwnerTicks == Beacon.getTicksToWin(beacon.getLevel()) / 4 ||
-                            beaconOwnerTicks == Beacon.getTicksToWin(beacon.getLevel()) / 2 ||
-                            beaconOwnerTicks == (Beacon.getTicksToWin(beacon.getLevel()) * 3) / 4 ||
-                            beaconOwnerTicks == Beacon.getTicksToWin(beacon.getLevel()) - 1200)
-                        beacon.sendWarning("time_warning");
-                }
+            if (building instanceof BeaconPlacement beacon && beacon.isBuilt && building.ownerName.equals(this.name)
+                    && beacon.getUpgradeLevel() == Beacon.MAX_UPGRADE_LEVEL) {
+                countingBeacon = beacon;
+                break;
             }
+        }
+
+        if (countingBeacon != null) {
+            int ticksToWin = Beacon.getTicksToWin(countingBeacon.getLevel());
+            beaconOwnerTicks += 1;
+            if (beaconOwnerTicks == ticksToWin / 4 ||
+                    beaconOwnerTicks == ticksToWin / 2 ||
+                    beaconOwnerTicks == (ticksToWin * 3) / 4 ||
+                    beaconOwnerTicks == ticksToWin - 1200)
+                countingBeacon.sendWarning("time_warning");
         }
     }
 
