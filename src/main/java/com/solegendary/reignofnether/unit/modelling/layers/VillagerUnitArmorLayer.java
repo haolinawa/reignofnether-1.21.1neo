@@ -1,6 +1,5 @@
 package com.solegendary.reignofnether.unit.modelling.layers;
 
-import com.google.common.collect.Maps;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.model.HumanoidModel;
@@ -18,14 +17,11 @@ import net.minecraft.world.entity.monster.AbstractIllager;
 import net.minecraft.world.item.*;
 import net.neoforged.neoforge.client.ClientHooks;
 
-import javax.annotation.Nullable;
-import java.util.Locale;
-import java.util.Map;
+
 
 // based on HumanoidArmorLayer
 public class VillagerUnitArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>, A extends HumanoidModel<T>> extends RenderLayer<T, M> {
 
-    private static final Map<String, ResourceLocation> ARMOR_LOCATION_CACHE = Maps.newHashMap();
     private final A innerModel;
     private final A outerModel;
 
@@ -51,20 +47,25 @@ public class VillagerUnitArmorLayer<T extends LivingEntity, M extends HumanoidMo
                 this.setPartVisibility(model, slot);
                 Model armorModel = this.getArmorModelHook(entity, itemstack, slot, model);
                 boolean flag = this.usesInnerModel(slot);
-                net.minecraft.world.item.component.DyedItemColor dyed = itemstack.get(net.minecraft.core.component.DataComponents.DYED_COLOR);
-                if (dyed != null) {
-                    int i = dyed.rgb();
-                    float f = (float)(i >> 16 & 255) / 255.0F;
-                    float f1 = (float)(i >> 8 & 255) / 255.0F;
-                    float f2 = (float)(i & 255) / 255.0F;
-                    this.renderModel(poseStack, buffer, packedLight, armoritem, armorModel, flag, f, f1, f2, this.getArmorResource(entity, itemstack, slot, (String)null));
-                    this.renderModel(poseStack, buffer, packedLight, armoritem, armorModel, flag, 1.0F, 1.0F, 1.0F, this.getArmorResource(entity, itemstack, slot, "overlay"));
-                } else {
-                    this.renderModel(poseStack, buffer, packedLight, armoritem, armorModel, flag, 1.0F, 1.0F, 1.0F, this.getArmorResource(entity, itemstack, slot, (String)null));
+
+                // 1.21: armor textures come from the ArmorMaterial, not from a name built out of the ITEM id.
+                // The old 1.20.1-style path (".../armor/<item>_layer_1.png", e.g. diamond_helmet_layer_1.png)
+                // no longer exists in 1.21 - the files are named after the material (diamond_layer_1.png) -
+                // so every armour piece resolved to a missing texture and rendered as the magenta/black
+                // checkerboard. Walk the material's layers exactly like vanilla's HumanoidArmorLayer does.
+                net.minecraft.world.item.ArmorMaterial armormaterial = armoritem.getMaterial().value();
+                net.neoforged.neoforge.client.extensions.common.IClientItemExtensions extensions =
+                        net.neoforged.neoforge.client.extensions.common.IClientItemExtensions.of(itemstack);
+                int fallbackColor = extensions.getDefaultDyeColor(itemstack);
+                for (int layerIdx = 0; layerIdx < armormaterial.layers().size(); layerIdx++) {
+                    net.minecraft.world.item.ArmorMaterial.Layer armorLayer = armormaterial.layers().get(layerIdx);
+                    int tint = extensions.getArmorLayerTintColor(itemstack, entity, armorLayer, layerIdx, fallbackColor);
+                    if (tint != 0) {
+                        ResourceLocation texture = ClientHooks.getArmorTexture(entity, itemstack, armorLayer, flag, slot);
+                        this.renderModel(poseStack, buffer, packedLight, armorModel, tint, texture);
+                    }
                 }
-                //ArmorTrim.getTrim(entity.level().registryAccess(), itemstack).ifPresent((p_289638_) -> {
-                //    this.renderTrim(armoritem.getMaterial(), poseStack, buffer, packedLight, p_289638_, armorModel, flag);
-                //});
+
                 if (itemstack.hasFoil()) {
                     this.renderGlint(poseStack, buffer, packedLight, armorModel);
                 }
@@ -96,9 +97,9 @@ public class VillagerUnitArmorLayer<T extends LivingEntity, M extends HumanoidMo
         }
     }
 
-    private void renderModel(PoseStack p_289664_, MultiBufferSource p_289689_, int p_289681_, ArmorItem p_289650_, Model p_289658_, boolean p_289668_, float p_289678_, float p_289674_, float p_289693_, ResourceLocation armorResource) {
-        VertexConsumer vertexconsumer = p_289689_.getBuffer(RenderType.armorCutoutNoCull(armorResource));
-        p_289658_.renderToBuffer(p_289664_, vertexconsumer, p_289681_, OverlayTexture.NO_OVERLAY, net.minecraft.util.FastColor.ARGB32.colorFromFloat(1.0F, p_289678_, p_289674_, p_289693_));
+    private void renderModel(PoseStack poseStack, MultiBufferSource buffer, int packedLight, Model model, int argbColor, ResourceLocation armorResource) {
+        VertexConsumer vertexconsumer = buffer.getBuffer(RenderType.armorCutoutNoCull(armorResource));
+        model.renderToBuffer(poseStack, vertexconsumer, packedLight, OverlayTexture.NO_OVERLAY, argbColor);
     }
 
     /*
@@ -129,23 +130,4 @@ public class VillagerUnitArmorLayer<T extends LivingEntity, M extends HumanoidMo
         return ClientHooks.getArmorModel(entity, itemStack, slot, model);
     }
 
-    public ResourceLocation getArmorResource(Entity entity, ItemStack stack, EquipmentSlot slot, @Nullable String type) {
-        ArmorItem item = (ArmorItem)stack.getItem();
-        String texture = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item).toString();
-        String domain = "minecraft";
-        int idx = texture.indexOf(58);
-        if (idx != -1) {
-            domain = texture.substring(0, idx);
-            texture = texture.substring(idx + 1);
-        }
-        String s1 = String.format(Locale.ROOT, "%s:textures/models/armor/%s_layer_%d%s.png", domain, texture,
-                this.usesInnerModel(slot) ? 2 : 1, type == null ? "" : String.format(Locale.ROOT, "_%s", type));
-        
-        ResourceLocation resourcelocation = ARMOR_LOCATION_CACHE.get(s1);
-        if (resourcelocation == null) {
-            resourcelocation = ResourceLocation.tryParse(s1);
-            ARMOR_LOCATION_CACHE.put(s1, resourcelocation);
-        }
-        return resourcelocation;
-    }
 }
