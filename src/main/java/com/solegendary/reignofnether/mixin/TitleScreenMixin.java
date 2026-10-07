@@ -186,14 +186,11 @@ public class TitleScreenMixin extends Screen {
                 int itemX = this.getX() + (this.width - 16) / 2;
                 int itemY = this.getY() + (this.height - 16) / 2;
 
-                // prevent rendering over essential tooltip
-                int essX = mapsButtonX;
-                int essY = mapsButtonY + mapsButtonSize + 4;
-                boolean mouseOverEssentialButton = pMouseX >= essX && pMouseX < essX + mapsButtonSize &&
-                                                    pMouseY >= essY && pMouseY < essY + mapsButtonSize &&
-                                                    !ModList.get().isLoaded("essential");
-                if (!mouseOverEssentialButton)
-                    guiGraphics.renderItem(mapStack, itemX, itemY);
+                // Always draw the map icon. The old code hid it whenever the cursor entered the space just
+                // below the button, so simply moving the mouse down there made the icon blink away - it also
+                // depended on the Essential mod being absent. The "Get RTS maps!" tooltip is drawn later in
+                // the screen layer, so there is no conflict to work around.
+                guiGraphics.renderItem(mapStack, itemX, itemY);
                 RenderSystem.enableDepthTest();
             }
         };

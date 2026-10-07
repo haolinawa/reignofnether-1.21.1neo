@@ -871,13 +871,18 @@ public class UnitServerEvents {
                 }
             }
         }
+        // Slow queue: one command per tick (spreads the pathfinding cost of a big batch order).
+        // No isIdle() gate: gating on the unit being idle meant a busy unit (gathering, fighting,
+        // hauling, still walking) would IGNORE a fresh player order until it happened to become idle -
+        // i.e. "sometimes I just cannot control my units". Player orders always win, and
+        // UnitActionItem.action resets the unit's goals so they overwrite whatever it was doing.
         synchronized (unitActionSlowQueue) {
             UnitActionItem actionedItem = null;
 
             for (UnitActionItem uai : unitActionSlowQueue) {
                 if (uai.getUnitIds().length > 0) {
                     Entity entity = evt.getLevel().getEntity(uai.getUnitIds()[0]);
-                    if (entity instanceof Unit unit && unit.isIdle()) {
+                    if (entity instanceof Unit unit) {
                         uai.action(evt.getLevel());
                         actionedItem = uai;
                         //System.out.println("actioned item from queue: " + uai.getAction().name() + "|" + uai.getUnitIds()[0] + "|" + uai.getPreselectedBlockPos());
