@@ -364,6 +364,60 @@ public class MiscUtil {
             stack.enchant(holder, level);
     }
 
+    /**
+     * True when an enchantment Holder can safely be stored in an ItemStack and later dereferenced.
+     *
+     * <p>Enchantments live in a datapack registry, so a NeoForge DeferredHolder is only usable once a
+     * RegistryAccess can resolve it (see {@link #enchant}); value() on an unbound one throws. Also accepts
+     * anything already bound, which covers vanilla holders.
+     */
+    public static boolean isUsableEnchantmentHolder(
+            net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> holder) {
+        if (holder == null)
+            return false;
+        net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment> key =
+                holder.unwrapKey().orElse(null);
+        if (key != null && enchant(key) != null)
+            return true;
+        return holder.isBound();
+    }
+
+    /**
+     * Applies an enchantment given a {@link net.minecraft.core.Holder}, resolving it through the registry
+     * first.
+     *
+     * <p>Writing a Holder straight into an ItemStack is what crashed on dedicated servers: the mod's own
+     * enchantments are NeoForge DeferredHolders, and although they masquerade as Holders they have no
+     * backing value for a datapack registry (DeferredHolder#value calls
+     * BuiltInRegistries.REGISTRY.get(minecraft:enchantment), which is null, then throws
+     * "Registry not present for ..."). The broken Holder is then stored in the stack's ENCHANTMENTS
+     * component, and every later EnchantmentHelper#runIterationOnItem - which literally calls
+     * holder.value() - throws from inside LivingEntity#baseTick, killing the entity tick.
+     *
+     * <p>So always resolve by ResourceKey; only accept the passed Holder when it is genuinely bound.
+     */
+    public static void enchantOrSkip(net.minecraft.world.item.ItemStack stack,
+            net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> holder, int level) {
+        if (stack == null || stack.isEmpty() || holder == null)
+            return;
+        net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment> key =
+                holder.unwrapKey().orElse(null);
+        if (key != null) {
+            net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> resolved = enchant(key);
+            if (resolved != null) {
+                stack.enchant(resolved, level);
+                return;
+            }
+        }
+        // no registry: only safe if this is already a real, bound registry reference
+        if (holder.isBound()) {
+            stack.enchant(holder, level);
+            return;
+        }
+        if (key != null)
+            warnMissingRegistryOnce(key);
+    }
+
     private static final java.util.Set<net.minecraft.resources.ResourceLocation> WARNED_MISSING_REGISTRY =
             java.util.concurrent.ConcurrentHashMap.newKeySet();
 

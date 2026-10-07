@@ -119,7 +119,7 @@ public class IllagerWaveSpawner {
         ItemStack item = entity.getItemBySlot(EquipmentSlot.MAINHAND);
         if (enchantment != null && item != ItemStack.EMPTY) {
             MiscUtil.clearEnchantments(item);
-            item.enchant(enchantment, enchantment.is(Enchantments.SHARPNESS) ? 2 : 1);
+            MiscUtil.enchantOrSkip(item, enchantment, enchantment.is(Enchantments.SHARPNESS) ? 2 : 1);
         }
     }
 

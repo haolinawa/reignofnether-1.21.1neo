@@ -77,7 +77,12 @@ public class WavePortal {
 
         // produceUnit spawns them before applying the ownerName, meaning they aren't registered as WaveEnemies automatically
         Entity entity = portal.produceUnit(level, mobType, ENEMY_OWNER_NAME, true);
-        SurvivalServerEvents.getCurrentEnemies().add(new WaveEnemy((Unit) entity));
+        // EntityType#spawn returns null when the spawn fails (blocked position, mob cap, chunk not loaded).
+        // This used to be wrapped unconditionally, and the WaveEnemy constructor dereferenced the null unit
+        // (getEntity().getOnPos()) - which crashed the server from a level-tick listener.
+        if (!(entity instanceof Unit spawnedUnit))
+            return;
+        SurvivalServerEvents.getCurrentEnemies().add(new WaveEnemy(spawnedUnit));
 
         if (entity instanceof GhastUnit ghastUnit)
             ghastUnit.move(MoverType.SELF, new Vec3(0,10,0));

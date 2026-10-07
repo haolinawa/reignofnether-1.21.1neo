@@ -495,7 +495,7 @@ public class VillagerUnit extends Vindicator implements Unit, WorkerUnit, Attack
                 mUnit.hunterExp = this.hunterExp;
                 ItemStack chest = new ItemStack(this.chestplate);
                 if (chestplateEnchanted && chest.getItem() != Items.AIR) {
-                    chest.enchant(EnchantmentRegistrar.FORTYIFYING, 1);
+                    MiscUtil.enchantOrSkip(chest, EnchantmentRegistrar.FORTYIFYING, 1);
                 }
                 mUnit.setItemSlot(EquipmentSlot.CHEST, chest);
                 mUnit.swordEnchanted = swordEnchanted;

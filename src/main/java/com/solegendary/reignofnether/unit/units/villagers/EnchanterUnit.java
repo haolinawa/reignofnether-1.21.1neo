@@ -614,7 +614,7 @@ public class EnchanterUnit extends Vindicator implements AttackerUnit, HeroUnit,
     public void enchantMilitary(LivingEntity entity) {
         Holder<Enchantment> enchantment = MartialEnchantment.getEnchantmentForUnit(entity);
         if (enchantment != null) {
-            entity.getMainHandItem().enchant(enchantment, 1);
+            MiscUtil.enchantOrSkip(entity.getMainHandItem(), enchantment, 1);
             if (entity instanceof MilitiaUnit militiaUnit) {
                 if (militiaUnit.isUsingBow())
                     militiaUnit.bowEnchanted = true;
@@ -635,7 +635,7 @@ public class EnchanterUnit extends Vindicator implements AttackerUnit, HeroUnit,
     public void enchantArmour(LivingEntity entity) {
         if (level().isClientSide) return;
 
-        entity.getItemBySlot(EquipmentSlot.CHEST).enchant(EnchantmentRegistrar.FORTYIFYING, 1);
+        MiscUtil.enchantOrSkip(entity.getItemBySlot(EquipmentSlot.CHEST), EnchantmentRegistrar.FORTYIFYING, 1);
         playEnchantSound();
 
         if (getHeroLevel() < HeroUnit.MAX_NEUTRAL_EXP_LEVEL)

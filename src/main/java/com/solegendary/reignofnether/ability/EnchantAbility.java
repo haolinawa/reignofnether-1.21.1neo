@@ -107,8 +107,10 @@ public abstract class EnchantAbility extends Ability {
             net.minecraft.resources.ResourceKey<Enchantment> key = getEnchantmentKey();
             if (key != null)
                 MiscUtil.enchantOrSkip(item, key, enchantmentLevel);
-            else if (getEnchantment() != null)
-                item.enchant(getEnchantment(), enchantmentLevel);
+            else
+                // never write a bare Holder: an unbound DeferredHolder stored in the stack makes every
+                // later EnchantmentHelper#runIterationOnItem throw inside LivingEntity#baseTick
+                MiscUtil.enchantOrSkip(item, getEnchantment(), enchantmentLevel);
         }
     }
 

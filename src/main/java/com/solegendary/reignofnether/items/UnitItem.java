@@ -163,7 +163,8 @@ public abstract class UnitItem implements RangeIndicator {
     public ItemStack getNewItemStack() {
         ItemStack itemStack = new ItemStack(item);
         for (Pair<net.minecraft.core.Holder<Enchantment>, Integer> pair : enchantments) {
-            itemStack.enchant(pair.getFirst(), pair.getSecond());
+            // resolve by key: these are DeferredHolders for the mod's own (datapack-registry) enchantments
+            MiscUtil.enchantOrSkip(itemStack, pair.getFirst(), pair.getSecond());
         }
         for (Pair<net.minecraft.resources.ResourceKey<Enchantment>, Integer> pair : enchantmentKeys) {
             MiscUtil.enchantOrSkip(itemStack, pair.getFirst(), pair.getSecond());

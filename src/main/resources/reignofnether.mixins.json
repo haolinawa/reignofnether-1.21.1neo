@@ -20,6 +20,7 @@
         "HoglinMixin",
         "IronGolemMixin",
         "ItemEntityMixin",
+        "ItemStackEnchantSanitiserMixin",
         "LeavesBlockMixin",
         "LevelChunkMixin",
         "LivingEntityMixin",
