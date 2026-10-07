@@ -189,6 +189,14 @@ public class PlayerServerEvents {
         }
     }
 
+    // Bots have no ServerPlayer, so they count as always present.
+    public static boolean isPlayerOnline(String playerName) {
+        for (ServerPlayer sp : players)
+            if (sp.getName().getString().equals(playerName))
+                return true;
+        return false;
+    }
+
     @Nullable
     public static RTSPlayer getRTSPlayer(String playerName) {
         synchronized (rtsPlayers) {
@@ -250,8 +258,12 @@ public class PlayerServerEvents {
                     // change mid-count, a laggy tick, or several beacons) and an equality test would then
                     // silently never fire, leaving the HUD at 0s with no victory. The flag keeps it to a
                     // single declaration - an equality test used to provide that by accident.
+                    // Only resolve while the winner can actually see it: a save loaded with a completed
+                    // countdown used to declare the victory during world load, before the client joined, so
+                    // neither the chat message nor the victory title reached anyone.
                     if (rtsPlayer.beaconOwnerTicks >= Beacon.getTicksToWin(serverLevel)
-                            && !rtsPlayer.beaconVictoryDeclared) {
+                            && !rtsPlayer.beaconVictoryDeclared
+                            && (rtsPlayer.isBot() || isPlayerOnline(rtsPlayer.name))) {
                         rtsPlayer.beaconVictoryDeclared = true;
                         PlayerServerEvents.beaconVictory(rtsPlayer.name);
                         break;
