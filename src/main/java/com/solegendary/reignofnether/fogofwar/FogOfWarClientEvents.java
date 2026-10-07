@@ -190,8 +190,24 @@ public class FogOfWarClientEvents {
         }
     }
 
-    // reload chunks like player pressed F3 + A
+    // reload chunks like player pressed F3 + A.
+    //
+    // This is EXPENSIVE: allChanged() throws away every compiled chunk section and then blocks the render
+    // thread in blockUntilClear() while they are rebuilt. While that happens entities are not drawn at all -
+    // 1.21 only renders an entity when its section is compiled (see LevelRenderer.renderLevel:
+    // "level.isOutsideBuildHeight(y) || this.isSectionCompiled(blockpos)") - while this mod's own overlays
+    // (ground boxes, health bars) draw regardless. So calling this per tick makes units look like they
+    // vanished into empty green boxes and the whole game stutter. Only ever call it for a genuine one-off
+    // state change (login/logout, fog toggled, F8), never from a repeating tick path; use
+    // levelRenderer.setSectionDirty(...) for anything incremental.
+    private static long lastResetTick = Long.MIN_VALUE;
+
     public static void resetFogChunks() {
+        // hard guard against exactly that regression: at most one full reload per second
+        long now = MC.level == null ? 0L : MC.level.getGameTime();
+        if (lastResetTick != Long.MIN_VALUE && now - lastResetTick < 20L)
+            return;
+        lastResetTick = now;
         MC.levelRenderer.allChanged();
     }
 
