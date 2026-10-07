@@ -173,6 +173,11 @@ public class RTSPlayer {
                     beaconOwnerTicks == (ticksToWin * 3) / 4 ||
                     beaconOwnerTicks == ticksToWin - 1200)
                 countingBeacon.sendWarning("time_warning");
+        } else {
+            // The field counts ticks of OWNING a beacon, so it must not survive losing it (or dropping
+            // below max level): a persisted stale value used to make the win test never match, and now
+            // that the test is >= it would instead hand out an instant win without any beacon at all.
+            beaconOwnerTicks = 0;
         }
     }
 

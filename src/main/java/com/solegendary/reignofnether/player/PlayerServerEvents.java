@@ -1153,10 +1153,29 @@ public class PlayerServerEvents {
                 System.err.println("ConcurrentModificationException during beaconVictory: " + e.getMessage());
             }
         } else {
+            boolean defeatedAny = false;
             for (RTSPlayer p : rtsPlayers) {
                 String n = p.name;
                 if (AlliancesServerEvents.isAllied(playerName, n) || n.equals(playerName)) continue;
                 defeat(n, Component.translatable("server.reignofnether.beacon_defeat").getString());
+                defeatedAny = true;
+            }
+
+            // When there was nobody left to defeat - a lone player testing the beacon, or every other
+            // player already allied - the loop above did nothing at all: no message, no title, no sound.
+            // The countdown would end and the server would log the victory while the screen showed
+            // nothing, which looks exactly like "the beacon victory never triggered". Always announce it.
+            if (!defeatedAny) {
+                if (AlliancesServerEvents.getAllAllies(playerName).isEmpty())
+                    sendMessageToAllPlayers("server.reignofnether.victorious", true, playerName);
+                else
+                    sendMessageToAllPlayers("server.reignofnether.victory_alliance", true, playerName);
+                PlayerClientboundPacket.victory(playerName);
+                for (String allyName : AlliancesServerEvents.getAllAllies(playerName))
+                    PlayerClientboundPacket.victory(allyName);
+                Set<String> winners = new HashSet<>(AlliancesServerEvents.getAllAllies(playerName));
+                winners.add(playerName);
+                broadcastMatchStats(winners);
             }
         }
     }
