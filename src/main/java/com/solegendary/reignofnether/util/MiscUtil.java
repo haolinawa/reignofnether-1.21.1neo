@@ -12,6 +12,7 @@ import com.solegendary.reignofnether.ReignOfNether;
 import com.solegendary.reignofnether.ability.heroAbilities.enchanter.ProtectiveEnchantment;
 import com.solegendary.reignofnether.ability.heroAbilities.necromancer.BloodMoon;
 import com.solegendary.reignofnether.alliance.AlliancesClient;
+import com.solegendary.reignofnether.alliance.AlliancesServerEvents;
 import com.solegendary.reignofnether.blocks.BlockClientEvents;
 import com.solegendary.reignofnether.blocks.WraithSnowLayerBlock;
 import com.solegendary.reignofnether.building.*;
@@ -807,6 +808,26 @@ public class MiscUtil {
             }
         }
         return closestBuilding;
+    }
+
+    /**
+     * True when this building belongs to the unit itself or to one of its allies, and so must NEVER be
+     * targeted by the unit's attack-building goals.
+     *
+     * <p>The attack-building goals used to accept any {@code isAttackable()} building - which only checks
+     * the world border and invulnerability, not ownership - so a unit ordered to attack an enemy that was
+     * standing near one of its own buildings would happily turn around and demolish its own base.
+     */
+    public static boolean isOwnOrAlliedBuilding(String unitOwnerName, BuildingPlacement building) {
+        if (unitOwnerName == null || building == null)
+            return false;
+        if (building.ownerName.equals(unitOwnerName))
+            return true;
+        if (building.ownerName.isBlank())
+            return false;
+        return building.getLevel().isClientSide()
+                ? AlliancesClient.isAllied(unitOwnerName, building.ownerName)
+                : AlliancesServerEvents.isAllied(unitOwnerName, building.ownerName);
     }
 
     // neutral -> neutral ❌

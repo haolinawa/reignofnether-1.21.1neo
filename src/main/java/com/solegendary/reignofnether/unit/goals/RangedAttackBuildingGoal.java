@@ -77,7 +77,8 @@ public class RangedAttackBuildingGoal<T extends Mob> extends Goal {
         if (blockPos != null) {
             if (this.mob.level().isClientSide()) {
                 BuildingPlacement b = BuildingUtils.findBuilding(this.mob.level().isClientSide(), blockPos);
-                if (b != null && b.isAttackable()) {
+                if (b != null && b.isAttackable() &&
+                        !MiscUtil.isOwnOrAlliedBuilding(((Unit) mob).getOwnerName(), b)) {
                     this.buildingTarget = b;
                         MiscUtil.addUnitCheckpoint(((Unit) mob), new BlockPos(
                                         buildingTarget.centrePos.getX(),
@@ -89,7 +90,8 @@ public class RangedAttackBuildingGoal<T extends Mob> extends Goal {
             }
             else {
                 BuildingPlacement b = BuildingUtils.findBuilding(this.mob.level().isClientSide(), blockPos);
-                if (b != null && b.isAttackable()) {
+                if (b != null && b.isAttackable() &&
+                        !MiscUtil.isOwnOrAlliedBuilding(((Unit) mob).getOwnerName(), b)) {
                     this.buildingTarget = b;
                     setNextBlockTarget();
                 }
@@ -130,8 +132,15 @@ public class RangedAttackBuildingGoal<T extends Mob> extends Goal {
     }
 
     public void tick() {
-        if (buildingTarget != null && buildingTarget.getBlocksPlaced() <= 0) {
-            stop();
+        if (buildingTarget != null) {
+            // runtime ownership re-check, mirroring MeleeAttackBuildingGoal
+            if (MiscUtil.isOwnOrAlliedBuilding(((Unit) mob).getOwnerName(), buildingTarget)) {
+                stop();
+                return;
+            }
+            if (buildingTarget.getBlocksPlaced() <= 0) {
+                stop();
+            }
         }
         if (blockTarget != null && buildingTarget != null) {
             float tx = blockTarget.getX() + 0.5f;

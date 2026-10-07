@@ -50,6 +50,12 @@ public class MeleeAttackBuildingGoal extends MoveToTargetBlockGoal {
 
     public void tick() {
         if (buildingTarget != null) {
+            // runtime re-check: if the target changed hands (captured) or ownership data reloaded, stop
+            // instead of demolishing a building that is now our own/allied
+            if (MiscUtil.isOwnOrAlliedBuilding(((Unit) mob).getOwnerName(), buildingTarget)) {
+                stopAttacking();
+                return;
+            }
 
             // for some reason, isDone() can sometimes be true even when moveTarget is nonnull and
             // we haven't reached the target, esp. for Brutes.
@@ -143,7 +149,8 @@ public class MeleeAttackBuildingGoal extends MoveToTargetBlockGoal {
             currentMeleeRecalcCooldown = RECALC_COOLDOWN_MAX;
             if (this.mob.level().isClientSide()) {
                 BuildingPlacement b = BuildingUtils.findBuilding(this.mob.level().isClientSide(), blockPos);
-                if (b != null && b.isAttackable()) {
+                if (b != null && b.isAttackable() &&
+                        !MiscUtil.isOwnOrAlliedBuilding(((Unit) this.mob).getOwnerName(), b)) {
                     this.buildingTarget = b;
                     MiscUtil.addUnitCheckpoint(((Unit) mob), new BlockPos(
                                     buildingTarget.centrePos.getX(),
@@ -155,7 +162,8 @@ public class MeleeAttackBuildingGoal extends MoveToTargetBlockGoal {
             }
             else {
                 BuildingPlacement b = BuildingUtils.findBuilding(this.mob.level().isClientSide(), blockPos);
-                if (b != null && b.isAttackable()) {
+                if (b != null && b.isAttackable() &&
+                        !MiscUtil.isOwnOrAlliedBuilding(((Unit) this.mob).getOwnerName(), b)) {
                     this.buildingTarget = b;
                     if (this.mob.isVehicle() && this.mob.getFirstPassenger() instanceof AttackerUnit aUnit &&
                             aUnit.getAttackBuildingGoal() instanceof RangedAttackBuildingGoal<?> rabg)
