@@ -421,6 +421,59 @@ public class PlayerServerEvents {
         int id = evt.getEntity().getId();
         ReignOfNether.LOGGER.info("Player logged out: " + evt.getEntity().getName().getString() + ", id: " + id);
         players.removeIf(player -> player.getId() == id);
+        // drop any stale references so a later rejoin with the same name cannot inherit them
+        String name = evt.getEntity().getName().getString();
+        orthoviewPlayers.removeIf(p -> p.getName().getString().equals(name));
+    }
+
+    /**
+     * Respawning replaces the ServerPlayer INSTANCE.
+     *
+     * <p>Vanilla {@code PlayerList#respawn} constructs a brand new ServerPlayer and only copies the entity
+     * id across (serverplayer.setId(player.getId())), removing the old instance from the level. This mod
+     * caches raw ServerPlayer references in {@link #players} / {@link #orthoviewPlayers} and resolves
+     * everything through them, so after a death + respawn those lists still pointed at the discarded
+     * instance. Every later call then silently operated on a dead object: teleportTo() did nothing, so
+     * entering RTS mode left the camera unlocked and adrift, and gamemode/topdown-GUI work went missing -
+     * which is exactly the "F12 in creative after dying as survival/adventure leaves you stuck with just
+     * a map and no HUD" report.
+     *
+     * <p>Clone carries both the original and the replacement, so rebind every cached reference here.
+     */
+    @SubscribeEvent
+    public static void onPlayerClone(PlayerEvent.Clone evt) {
+        if (evt.getEntity().level().isClientSide())
+            return;
+        if (!(evt.getEntity() instanceof ServerPlayer newPlayer))
+            return;
+        if (!(evt.getOriginal() instanceof ServerPlayer oldPlayer))
+            return;
+
+        String playerName = oldPlayer.getName().getString();
+
+        for (int i = 0; i < players.size(); i++)
+            if (players.get(i) == oldPlayer || players.get(i).getName().getString().equals(playerName))
+                players.set(i, newPlayer);
+        if (players.stream().noneMatch(p -> p == newPlayer))
+            players.add(newPlayer);
+
+        boolean wasInOrthoview = false;
+        for (int i = 0; i < orthoviewPlayers.size(); i++) {
+            ServerPlayer op = orthoviewPlayers.get(i);
+            if (op == oldPlayer || op.getName().getString().equals(playerName)) {
+                orthoviewPlayers.set(i, newPlayer);
+                wasInOrthoview = true;
+            }
+        }
+
+        // the replacement is NOT in orthoview mode yet (it has just been created), so record that the
+        // player was in it and restore the bookkeeping once they re-enter - this prevents the stale entry
+        // from claiming the new player is already in RTS mode while the client still has it disabled
+        if (!wasInOrthoview)
+            orthoviewPlayers.removeIf(p -> p.getName().getString().equals(playerName));
+
+        ReignOfNether.LOGGER.info("[Player] onPlayerClone: rebound {} references for {} (wasDeath={})",
+                wasInOrthoview ? "orthoview+" : "player", playerName, evt.isWasDeath());
     }
 
     public static void startRTS(int playerId, Vec3 pos, Faction faction) {
@@ -872,12 +925,52 @@ public class PlayerServerEvents {
         }
     }
 
+    /**
+     * Resolves a player by entity id, repairing a stale cached instance if needed.
+     *
+     * <p>{@link #players} holds live references, but respawning swaps the ServerPlayer instance while the
+     * entity id stays the same. If anything managed to leave a dead instance in the list, every lookup
+     * through it silently no-ops (teleportTo on a removed entity, setGameMode on a detached object, ...).
+     * Rather than trust the cache blindly, verify against the server's authoritative player list and rebind
+     * in place - this makes the whole class immune to that failure mode.
+     */
     private static ServerPlayer getPlayerById(int playerId) {
-        for (ServerPlayer player : players) {
-            if (playerId == player.getId()) {
-                return player;
+        for (int i = 0; i < players.size(); i++) {
+            ServerPlayer cached = players.get(i);
+            if (cached != null && cached.getId() == playerId) {
+                if (isStale(cached)) {
+                    ServerPlayer live = findLivePlayer(playerId);
+                    if (live != null) {
+                        players.set(i, live);
+                        return live;
+                    }
+                }
+                return cached;
             }
         }
+        // not cached at all (e.g. we missed the join event) - fall back to the server list
+        ServerPlayer live = findLivePlayer(playerId);
+        if (live != null)
+            players.add(live);
+        return live;
+    }
+
+    // a cached player is stale once vanilla has removed it from the level (respawn replaces the instance)
+    private static boolean isStale(ServerPlayer cached) {
+        if (cached.isRemoved())
+            return true;
+        ServerPlayer live = findLivePlayer(cached.getId());
+        return live != null && live != cached;
+    }
+
+    @Nullable
+    private static ServerPlayer findLivePlayer(int playerId) {
+        MinecraftServer server = serverLevel != null ? serverLevel.getServer() : null;
+        if (server == null)
+            return null;
+        for (ServerPlayer player : server.getPlayerList().getPlayers())
+            if (player.getId() == playerId)
+                return player;
         return null;
     }
 
