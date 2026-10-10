@@ -712,6 +712,15 @@ public class UnitClientEvents {
         if (!OrthoviewClientEvents.isEnabled()) return;
         if (MC.level == null) return;
 
+        // Clear the drag-blocking flag on EVERY right-click press, before any early return. It used to be
+        // cleared only at the bottom of the right-button branch, so a press that bailed out earlier (over the
+        // HUD, over the minimap, or while a building was armed) left it at its previous value. Because
+        // onMouseDrag() refuses to start a formation drag while this is true, one right-click on a unit that
+        // issued an attack order was enough to make every following drag-to-move silently do nothing - the
+        // "按着轨迹移动" (trace the path while holding) feature appeared to be gone.
+        if (evt.getButton() == GLFW.GLFW_MOUSE_BUTTON_2)
+            rightClickActionTaken = false;
+
         // prevent clicking behind HUDs
         if (HudClientEvents.isMouseOverAnyButtonOrHud()) {
             CursorClientEvents.setLeftClickAction(null);

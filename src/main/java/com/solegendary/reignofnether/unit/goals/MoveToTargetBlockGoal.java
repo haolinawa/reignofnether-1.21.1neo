@@ -295,6 +295,14 @@ public class MoveToTargetBlockGoal extends Goal {
         return this.moveTarget;
     }
 
+    // True while this goal is still actively pursuing its moveTarget: either an async path is in flight or
+    // the mob is still following a navigation path. Callers that want to skip a "redundant" order must check
+    // this, otherwise they treat a stale target left over from a finished order as if the unit were still
+    // walking to it.
+    public boolean isRunningOrPending() {
+        return pathPending || !this.mob.getNavigation().isDone();
+    }
+
     @Nullable public BlockPos getFinalNodePos() {
         Path path = this.mob.getNavigation().getPath();
         if (path != null && !path.nodes.isEmpty())

@@ -119,6 +119,16 @@ public class UnitActionItem {
         if (goal != null && !le.level().isClientSide()) {
             BlockPos bp = goal.getMoveTarget();
             if (bp != null) {
+                // The old order is only still "in effect" while the unit is walking it or already stands on
+                // it. If the unit stopped short (path gave up, the goal was deactivated, or it was displaced),
+                // the stored target is dead and skipping the new order left the unit frozen in place - the
+                // reported "sometimes I just cannot move my units, or only after a while / after rejoining".
+                // A unit that has genuinely arrived still counts as redundant, so re-ordering the tile it is
+                // standing on stays a no-op.
+                boolean stale = !goal.isRunningOrPending()
+                        && bp.distSqr(le.getOnPos()) > goal.getMinDistToRecalculateSqr();
+                if (stale)
+                    return false;
                 double distToTarget = bp.distSqr(le.getOnPos());
                 if (distToTarget > 400) {
                     double ignoreDist = Math.min(5, Math.sqrt(distToTarget) / 10);
