@@ -79,6 +79,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -131,7 +132,46 @@ public class UnitServerEvents {
     private static final java.util.concurrent.CopyOnWriteArrayList<LivingEntity> allUnits =
             new java.util.concurrent.CopyOnWriteArrayList<>();
 
-    private static final HashMap<Integer, ChunkAccess> forcedUnitChunks = new HashMap<>();
+    // Entity id -> the chunk we are holding forced for it.
+    private static final HashMap<Integer, ChunkPos> forcedUnitChunks = new HashMap<>();
+
+    // ChunkPos.toLong() -> how many units currently hold this chunk forced.
+    //
+    // This refcount is REQUIRED, not an optimisation. Vanilla's forced-chunk set
+    // (ForcedChunksSavedData#getChunks) is a plain LongSet with no notion of who forced a chunk, so a
+    // single setChunkForced(x, z, false) clears it for EVERY owner. Two units sharing a chunk (the norm
+    // for an RTS army) plus one of them walking away used to unforce that chunk entirely, which unloaded
+    // it - and unloading a chunk makes the server drop every entity in it from each client
+    // (ServerEntity#removePairing sends ClientboundRemoveEntitiesPacket). That is the reported bug:
+    // unit models vanish while this mod's own overlays (ground boxes, health bars) keep drawing from
+    // its separate allUnits list, so the boxes stay and the bars jitter as entities are re-added on the
+    // next re-force. It repeats because it depends on units crossing chunk borders at different times.
+    private static final HashMap<Long, Integer> forcedChunkRefs = new HashMap<>();
+
+    private static void forceUnitChunk(ServerLevel level, int entityId, ChunkPos pos) {
+        long key = pos.toLong();
+        int refs = forcedChunkRefs.getOrDefault(key, 0);
+        forcedChunkRefs.put(key, refs + 1);
+        if (refs == 0)
+            level.setChunkForced(pos.x, pos.z, true);
+        forcedUnitChunks.put(entityId, pos);
+    }
+
+    private static void releaseUnitChunk(ServerLevel level, int entityId) {
+        ChunkPos old = forcedUnitChunks.remove(entityId);
+        if (old == null)
+            return;
+        long key = old.toLong();
+        Integer refs = forcedChunkRefs.get(key);
+        if (refs == null)
+            return;
+        if (refs <= 1) {
+            forcedChunkRefs.remove(key);
+            level.setChunkForced(old.x, old.z, false);
+        } else {
+            forcedChunkRefs.put(key, refs - 1);
+        }
+    }
 
     private static final Random RANDOM = new Random();
 
@@ -187,6 +227,7 @@ public class UnitServerEvents {
             saveGatherTargets(level);
             allUnits.clear();
             forcedUnitChunks.clear();
+            forcedChunkRefs.clear();
         }
     }
 
@@ -511,9 +552,8 @@ public class UnitServerEvents {
                 entity.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.AIR));
             }
 
-            ChunkAccess chunk = evt.getLevel().getChunk(entity.getOnPos());
-            ((ServerLevel) evt.getLevel()).setChunkForced(chunk.getPos().x, chunk.getPos().z, true);
-            forcedUnitChunks.put(entity.getId(), chunk);
+            ChunkPos chunkPos = new ChunkPos(entity.getOnPos());
+            forceUnitChunk((ServerLevel) evt.getLevel(), entity.getId(), chunkPos);
         }
 
         if (evt.getEntity() instanceof Projectile proj) {
@@ -531,10 +571,10 @@ public class UnitServerEvents {
             allUnits.removeIf(e -> e.getId() == entity.getId());
             UnitSyncClientboundPacket.sendLeavePacket(entity);
 
-            //ChunkAccess chunk = evt.getLevel().getChunk(entity.getOnPos());
-            //ForcedChunkManager.forceChunk((ServerLevel) evt.getLevel(), ReignOfNether.MOD_ID, entity, chunk.getPos()
-            // .x, chunk.getPos().z, false, true);
-            //forcedUnitChunks.removeIf(p -> p.getFirst() == entity.getId());
+            // Hand back this unit's forced-chunk hold. This used to be commented out, so every unit that
+            // ever existed kept its first chunk force-loaded forever (the entry was never removed from
+            // forcedUnitChunks either). The refcount makes this safe to call unconditionally.
+            releaseUnitChunk((ServerLevel) evt.getLevel(), entity.getId());
         }
 
         // if a player has no more units, then they are defeated
@@ -855,19 +895,15 @@ public class UnitServerEvents {
                     ItemClientboundPacket.syncInventory(entity.getId(), inv.getAllItems());
                 }
 
-                // remove old chunk // add current chunk
-                ChunkAccess newChunk = evt.getLevel().getChunk(entity.getOnPos());
-                ChunkAccess oldChunk = forcedUnitChunks.get(entity.getId());
-                boolean chunkNeedsUpdate = oldChunk != null && (
-                    oldChunk.getPos().x != newChunk.getPos().x || oldChunk.getPos().z != newChunk.getPos().z
-                );
-
-                if (chunkNeedsUpdate) {
-                    ((ServerLevel) evt.getLevel()).setChunkForced(oldChunk.getPos().x, oldChunk.getPos().z, false);
-                    ((ServerLevel) evt.getLevel()).setChunkForced(newChunk.getPos().x, newChunk.getPos().z, true);
-                    forcedUnitChunks.put(entity.getId(), newChunk);
-                    //ReignOfNether.LOGGER.info("Updated forced chunk for entity: " + entity.getId() + " at: " +
-                    // newChunk.getPos().x + "," + newChunk.getPos().z);
+                // Move this unit's forced-chunk hold to wherever it is now. Releasing the old chunk goes
+                // through the refcount, so a unit leaving a chunk that its neighbours still occupy no
+                // longer unloads it (and with it, every entity standing in it).
+                ChunkPos newChunkPos = new ChunkPos(entity.getOnPos());
+                ChunkPos oldChunkPos = forcedUnitChunks.get(entity.getId());
+                if (oldChunkPos == null || !oldChunkPos.equals(newChunkPos)) {
+                    ServerLevel sl = (ServerLevel) evt.getLevel();
+                    releaseUnitChunk(sl, entity.getId());
+                    forceUnitChunk(sl, entity.getId(), newChunkPos);
                 }
             }
         }

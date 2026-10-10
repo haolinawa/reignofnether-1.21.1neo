@@ -883,7 +883,14 @@ public class BuildingClientEvents {
                 }
             }
             buildings.add(newBuilding);
-            BuildingProductionServerboundPacket.requestSync(newBuilding.originPos);
+            // Only ask for the production queue of buildings this client may actually control. On join the
+            // server replays EVERY building in the world (including other players'), and requesting sync
+            // for each one sent ~120 packets that the server immediately rejected with a warning
+            // ("Tried to process packet from X for Y") - one join burst even stalled the server for 2.3s.
+            if (newBuilding.ownerName.equals(MC.player.getName().getString())
+                    || AlliancesClient.canControlAlly(newBuilding.ownerName)) {
+                BuildingProductionServerboundPacket.requestSync(newBuilding.originPos);
+            }
         }
         // sync the goal so we can display the correct animations
         Entity entity = hudSelectedEntity;
